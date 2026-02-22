@@ -37,14 +37,14 @@ export default function MonthYearSelector({
     };
 
     return (
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-[#0f172a]/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 shadow-inner">
+        <div className="relative z-50 flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-[#0f172a]/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/5 shadow-inner">
             {/* Toggle Monthly/Annual - Segmented Control */}
             <div className="flex bg-[#020617]/50 p-1 rounded-xl border border-white/5 relative">
                 <button
                     onClick={() => setViewMode("monthly")}
                     className={`relative z-10 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${viewMode === "monthly"
-                            ? "text-white bg-blue-600 shadow-lg shadow-blue-500/20"
-                            : "text-slate-400 hover:text-slate-200"
+                        ? "text-white bg-blue-600 shadow-lg shadow-blue-500/20"
+                        : "text-slate-400 hover:text-slate-200"
                         }`}
                 >
                     Mensual
@@ -52,8 +52,8 @@ export default function MonthYearSelector({
                 <button
                     onClick={() => setViewMode("annual")}
                     className={`relative z-10 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${viewMode === "annual"
-                            ? "text-white bg-blue-600 shadow-lg shadow-blue-500/20"
-                            : "text-slate-400 hover:text-slate-200"
+                        ? "text-white bg-blue-600 shadow-lg shadow-blue-500/20"
+                        : "text-slate-400 hover:text-slate-200"
                         }`}
                 >
                     Anual
@@ -85,8 +85,8 @@ export default function MonthYearSelector({
                                             key={m}
                                             onClick={() => handleMonthSelect(i)}
                                             className={`px-3 py-2 text-left rounded-lg text-sm transition-colors ${selectedDate.month === i
-                                                    ? "bg-blue-500/10 text-blue-400 font-medium"
-                                                    : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                                                ? "bg-blue-500/10 text-blue-400 font-medium"
+                                                : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
                                                 }`}
                                         >
                                             {m}
@@ -104,8 +104,8 @@ export default function MonthYearSelector({
                             key={y}
                             onClick={() => handleYearSelect(y)}
                             className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedDate.year === y
-                                    ? "bg-white/10 text-white shadow-sm border border-white/5"
-                                    : "text-slate-500 hover:text-slate-300"
+                                ? "bg-white/10 text-white shadow-sm border border-white/5"
+                                : "text-slate-500 hover:text-slate-300"
                                 }`}
                         >
                             {y}

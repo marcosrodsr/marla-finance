@@ -10,7 +10,7 @@ type ChipSelectProps = {
 
 export default function ChipSelect({ options, selected, onSelect }: ChipSelectProps) {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[160px] overflow-y-auto custom-scrollbar">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-black/20 p-2 rounded-2xl border border-white/5 max-h-[160px] overflow-y-auto overflow-x-hidden custom-scrollbar">
             {options.map((option) => (
                 <button
                     key={option.id}

@@ -47,7 +47,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
                 </div>
 
                 {/* Content - Scrollable area */}
-                <div className="p-6 bg-gradient-to-b from-[#0f172a]/50 to-[#020617]/50 overflow-y-auto overscroll-contain pb-safe shrink">
+                <div className="p-6 bg-gradient-to-b from-[#0f172a]/50 to-[#020617]/50 overflow-y-auto overflow-x-hidden overscroll-contain pb-safe shrink">
                     {children}
                 </div>
             </div>
