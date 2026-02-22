@@ -1,7 +1,19 @@
 import type { NextConfig } from "next";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+
+const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // aquí puedes ir metiendo tus opciones de Next si las necesitas
 };
 
-export default nextConfig;
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: isDev, // en local desactivado
+});
+
+export default withPWA(nextConfig);
