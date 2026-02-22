@@ -1,0 +1,379 @@
+# 🧠 Marla Finance — Informe Completo del Sistema
+
+Este documento contiene **todo** lo necesario para que otro modelo de IA entienda la arquitectura, lógica, componentes, y base de datos de Marla Finance.
+
+---
+
+## 1. Stack Tecnológico
+
+| Tecnología | Versión / Detalle |
+|---|---|
+| Framework | Next.js 16+ (App Router) |
+| Lenguaje | TypeScript |
+| Base de Datos | Supabase (PostgreSQL gestionado) |
+| Estado Global | React Context ([FinanceProvider](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/store/finance-store.tsx#22-165)) |
+| Gráficos | Recharts |
+| Estilos | Tailwind CSS 4 |
+| Tipografía | Geist Sans / Geist Mono (Google Fonts) |
+| Moneda | EUR, almacenado en **céntimos** (integer) |
+
+---
+
+## 2. Estructura de Carpetas
+
+```
+src/
+├── app/                          # Next.js App Router
+│   ├── layout.tsx                # Root layout (envuelve todo en FinanceProvider + AppShell)
+│   ├── page.tsx                  # Redirect → /dashboard
+│   ├── dashboard/page.tsx        # Dashboard General (vista pareja)
+│   ├── marcos/page.tsx           # Dashboard Personal de Marcos
+│   ├── camila/page.tsx           # Dashboard Personal de Camila
+│   ├── transactions/page.tsx     # Listado completo de movimientos con filtros
+│   ├── settings/page.tsx         # Ajustes (reset de datos)
+│   └── api/                      # API Routes (backend)
+│       ├── transactions/
+│       │   ├── route.ts          # GET (listar) + POST (crear)
+│       │   └── [id]/route.ts     # PUT (editar) + DELETE (eliminar)
+│       └── categories/
+│           └── route.ts          # GET + POST categorías
+├── components/
+│   ├── AppShell.tsx              # Layout shell (SideNav + TopBar + BottomNav + FAB)
+│   ├── SideNav.tsx               # Navegación lateral (desktop)
+│   ├── BottomNav.tsx             # Navegación inferior (mobile)
+│   ├── TopBar.tsx                # Barra superior (mobile)
+│   ├── PersonalDashboard.tsx     # Dashboard reutilizable para Marcos/Camila
+│   ├── StatCard.tsx              # Tarjeta KPI (Ingresos, Gastos, etc.)
+│   ├── Card.tsx                  # Contenedor con estilo glassmorphism
+│   ├── AddPaymentModal.tsx       # Modal para crear/editar transacciones
+│   ├── AddCategoryModal.tsx      # Modal para crear nuevas categorías
+│   ├── TransactionsList.tsx      # Lista de transacciones con click para editar
+│   ├── TransactionCalendar.tsx   # Vista de calendario mensual
+│   ├── MonthYearSelector.tsx     # Selector de mes/año + toggle Mensual/Anual
+│   ├── ChipSelect.tsx            # Selector de chips para categorías
+│   ├── Modal.tsx                 # Componente modal base
+│   ├── Button.tsx                # Botón reutilizable
+│   └── charts/
+│       ├── WeeklyBarChart.tsx    # Gráfico de barras semanal (vista mensual)
+│       ├── AnnualChart.tsx       # Gráfico anual (12 meses)
+│       ├── BarChart.tsx          # Gráfico de barras horizontal (top categorías)
+│       └── LineChart.tsx         # Gráfico de líneas (legacy, aún disponible)
+├── lib/
+│   ├── finance.ts                # TODA la lógica de cálculos financieros
+│   ├── supabase.ts               # Cliente singleton de Supabase
+│   ├── mock.ts                   # Datos semilla (USERS, CATEGORIES, transacciones de prueba)
+│   └── theme.ts                  # Paleta de colores del tema
+├── store/
+│   └── finance-store.tsx         # Context Provider con estado global + sincronización Supabase
+└── types/
+    └── index.ts                  # Tipos TypeScript del dominio
+```
+
+---
+
+## 3. Tipos del Dominio ([src/types/index.ts](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/types/index.ts))
+
+```typescript
+type User = { id: string; name: string };
+
+type CategoryKind = "fixed" | "variable" | "saving" | "investment" | "income";
+type CategoryScope = "individual" | "shared";
+
+type Category = {
+    id: string;
+    label: string;
+    icon: string;           // Emoji
+    kind: CategoryKind;
+    scope: CategoryScope;
+    limitMonthly?: number;  // En céntimos. Ej: 30000 = 300€
+};
+
+type Transaction = {
+    id: string;
+    createdAt: string;      // ISO timestamp
+    date: string;           // YYYY-MM-DD
+    userId: string;         // "marcos" | "camila" | "pareja"
+    categoryId: string;
+    amountCents: number;    // SIEMPRE en céntimos (1€ = 100)
+    note?: string;
+    isShared?: boolean;
+};
+
+type ViewMode = "monthly" | "annual";
+type MonthYear = { month: number; year: number }; // month: 0-11
+```
+
+---
+
+## 4. Usuarios del Sistema
+
+| ID | Nombre | Rol |
+|---|---|---|
+| `marcos` | Marcos | Persona 1 (sueldo: 1.494€) |
+| `camila` | Camila | Persona 2 (sueldo: 2.500€) |
+| `pareja` | Pareja | Usuario virtual para gastos compartidos |
+
+---
+
+## 5. Categorías Base
+
+| ID | Label | Kind | Scope | Límite |
+|---|---|---|---|---|
+| [rent](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/lib/finance.ts#277-289) | Alquiler | fixed | shared | - |
+| `electricity` | Luz/Agua | fixed | shared | - |
+| `internet` | Movil/internet | fixed | shared | - |
+| `subscriptions` | Subs | fixed | shared | - |
+| `market` | Mercado | fixed | shared | - |
+| `outing` | Salidas | variable | shared | 300€ |
+| `transport` | Transporte | fixed | individual | - |
+| `chatgpt` | ChatGPT | fixed | individual | - |
+| `salary` | Sueldo | income | individual | - |
+| `income-joint` | Ingreso Conjunto | income | shared | - |
+| `savings-personal` | Ahorro Personal | saving | individual | - |
+| `savings-joint` | Ahorro Pareja | saving | shared | - |
+| `investments` | Inversiones | investment | individual | - |
+| `investments-joint` | Inversiones Pareja | investment | shared | - |
+
+---
+
+## 6. Lógica Financiera Core ([src/lib/finance.ts](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/lib/finance.ts))
+
+### 6.1 Regla de División 50/50
+
+La app tiene **dos contextos de vista**:
+
+- **Vista Pareja** (`currentUserId = null`): Todas las transacciones se suman al 100%.
+- **Vista Personal** (`currentUserId = "marcos"` o `"camila"`):
+  - Las categorías `scope: "shared"` se dividen al **50%** (ej: Alquiler de 1150€ → 575€ por persona).
+  - Las categorías `scope: "individual"` se cuentan al 100% **solo si pertenecen al usuario**.
+  - Las transacciones individuales del otro usuario se **ignoran**.
+
+### 6.2 Cálculo de Totales ([calculateTotals()](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/lib/finance.ts#130-192))
+
+```
+income       = suma de transacciones kind:"income"
+fixed        = suma de transacciones con label en FIXED_NAMES
+recurring    = suma de transacciones kind:"variable" + kind:"fixed" que NO están en FIXED_NAMES
+saved        = suma de transacciones kind:"saving"
+invested     = suma de transacciones kind:"investment"
+spent        = fixed + recurring
+balance      = income - spent - saved - invested
+```
+
+Las constantes `FIXED_NAMES` determinan qué categorías son "gastos fijos":
+```typescript
+const FIXED_NAMES = ["Alquiler", "Luz/Agua", "Transporte", "Movil/internet", "Subs", "Mercado", "chatGPT"];
+```
+
+### 6.3 Ahorro Acumulado ([getAccumulatedSavings()](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/lib/finance.ts#290-334))
+
+El ahorro personal se calcula como el **remanente acumulado** desde enero hasta el mes actual:
+
+```
+Ahorro Personal = Σ(mes=0..actual) [ Ingresos - Fijos - Variables - Inversiones - Ahorros Conjuntos ]
+```
+
+Regla especial: **Ingresos y gastos fijos se cuentan completos desde el día 1**, mientras que los gastos variables se filtran hasta el día de la semana seleccionada.
+
+### 6.4 Filtrado por Semanas
+
+Cada mes se divide en semanas (Lunes a Domingo). La función [getWeeksOfMonth()](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/lib/finance.ts#251-276) genera las semanas dinámicamente. El dashboard permite seleccionar una semana, y todos los datos (KPIs, gráficos, transacciones) se filtran coherentemente:
+
+- **Ingresos y Fijos**: Siempre se cuentan completos (no se filtran por semana).
+- **Variables, Ahorros, Inversiones**: Solo se cuentan hasta el último día de la semana seleccionada.
+
+---
+
+## 7. Páginas de la Aplicación
+
+### 7.1 `/dashboard` — Dashboard General (Vista Pareja)
+
+| Sección | Descripción |
+|---|---|
+| **6 KPIs** | Ingresos, Gastos Fijos, Gastos Recurrentes, Ahorro Pareja (YTD), Inversiones, Disponible |
+| **Gráfico principal** | Mensual: WeeklyBarChart (barras por semana). Anual: AnnualChart (12 meses) |
+| **Top Categorías** | BarChart horizontal con las 5 categorías con más gasto |
+| **Últimos movimientos** | Lista de transacciones del mes actual (max 8) |
+| **Calendario** | Vista calendario con transacciones por día |
+| **Selector** | Toggle Mensual/Anual + selector de mes/año |
+
+### 7.2 `/marcos` y `/camila` — Dashboards Personales
+
+Usan el componente [PersonalDashboard.tsx](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/components/PersonalDashboard.tsx) con `userId` como prop. Misma estructura que el dashboard general pero:
+- Aplica la regla del 50/50
+- Muestra KPIs personalizados: "Ah. Personal" (acumulado) y "Ah. Pareja" (con botón "+ Aportar")
+- El botón "Aportar" abre el modal pre-rellenado con la categoría `savings-joint`
+
+### 7.3 `/transactions` — Movimientos
+
+| Feature | Descripción |
+|---|---|
+| **Tabs** | General / Marcos / Camila |
+| **Filtros por Kind** | Fijos, Variables, Ingresos, Ahorros, Inversiones |
+| **Filtro por Categoría** | Dropdown con todas las categorías |
+| **Lista completa** | Todas las transacciones filtradas (sin límite) |
+| **Click para editar** | Abre AddPaymentModal con datos precargados |
+
+### 7.4 `/settings` — Ajustes
+
+Actualmente solo tiene un botón para "Borrar Datos y Restaurar" que limpia localStorage.
+
+---
+
+## 8. Componentes Principales
+
+### [AppShell.tsx](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/components/AppShell.tsx)
+Layout global: SideNav (desktop) + BottomNav (mobile) + TopBar (mobile) + FAB flotante para añadir pagos + Modales globales (AddPaymentModal + AddCategoryModal).
+
+### [AddPaymentModal.tsx](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/components/AddPaymentModal.tsx)
+Modal con formulario para crear/editar transacciones:
+- Selección de usuario (chips: Marcos/Camila/Pareja)
+- Selección de categoría (chips con icono+label)
+- Monto en euros (acepta formato `12,34` o `12.34`, se convierte a céntimos)
+- Fecha (date picker)
+- Nota opcional
+- Modo edición si se pasa `initialData`
+
+### [WeeklyBarChart.tsx](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/components/charts/WeeklyBarChart.tsx)
+Gráfico de barras agrupadas por semana del mes. Cada semana muestra barras para: Gastos Fijos, Gastos Variables, Ingresos, Ahorros, Inversiones. El eje Y máximo es 3994€ (suma de los dos sueldos). Tiene botones para cambiar de semana.
+
+### [AnnualChart.tsx](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/components/charts/AnnualChart.tsx)
+Gráfico con los 12 meses del año, mostrando barras apiladas o agrupadas con las mismas categorías.
+
+---
+
+## 9. Estado Global ([src/store/finance-store.tsx](file:///c:/Users/MarcosLocal/Desktop/marla-finance/src/store/finance-store.tsx))
+
+### Arquitectura
+```mermaid
+graph LR
+    UI[Componentes] -->|useFinance| Store[FinanceProvider]
+    Store -->|fetch| API["/api/transactions<br>/api/categories"]
+    API -->|Supabase JS| DB[(PostgreSQL)]
+```
+
+### API del Store
+```typescript
+type FinanceStore = {
+    users: User[];
+    categories: Category[];
+    transactions: Transaction[];
+    loading: boolean;
+    error: string | null;
+    addTransaction: (tx) => Promise<void>;
+    updateTransaction: (id, tx) => Promise<void>;
+    deleteTransaction: (id) => Promise<void>;
+    addCategory: (cat) => Promise<void>;
+    refresh: () => Promise<void>;
+};
+```
+
+### Patrón de Sincronización
+1. **On mount**: `fetchAll()` → carga categorías y transacciones desde Supabase vía API routes.
+2. **Optimistic updates**: cada operación CRUD actualiza el estado local instantáneamente.
+3. **Rollback**: si la petición al servidor falla, revierte el estado local al anterior.
+
+---
+
+## 10. Base de Datos Supabase
+
+### 10.1 Esquema SQL
+
+```sql
+create table users (
+  id   text primary key,
+  name text not null
+);
+
+create table categories (
+  id            text primary key,
+  label         text not null,
+  icon          text not null default '💸',
+  kind          text not null check (kind in ('fixed','variable','saving','investment','income')),
+  scope         text not null check (scope in ('individual','shared')),
+  limit_monthly integer
+);
+
+create table transactions (
+  id           text primary key,
+  created_at   timestamptz not null default now(),
+  date         date not null,
+  user_id      text not null references users(id) on delete cascade,
+  category_id  text references categories(id) on delete set null,
+  amount_cents integer not null,
+  note         text,
+  is_shared    boolean default false
+);
+
+create index idx_transactions_date on transactions(date);
+create index idx_transactions_user_date on transactions(user_id, date);
+create index idx_transactions_category on transactions(category_id);
+```
+
+### 10.2 Mapeo Columnas DB ↔ Tipos TypeScript
+
+| DB (snake_case) | TypeScript (camelCase) |
+|---|---|
+| `user_id` | `userId` |
+| `category_id` | `categoryId` |
+| `amount_cents` | `amountCents` |
+| `created_at` | `createdAt` |
+| `is_shared` | `isShared` |
+| `limit_monthly` | `limitMonthly` |
+
+La conversión se hace en las **API Routes** (`src/app/api/`).
+
+### 10.3 API Routes
+
+| Endpoint | Método | Acción |
+|---|---|---|
+| `/api/transactions` | GET | Lista todas las transacciones (ordenadas por fecha desc) |
+| `/api/transactions` | POST | Crea una nueva transacción |
+| `/api/transactions/[id]` | PUT | Actualiza una transacción |
+| `/api/transactions/[id]` | DELETE | Elimina una transacción |
+| `/api/categories` | GET | Lista todas las categorías |
+| `/api/categories` | POST | Crea una nueva categoría |
+
+### 10.4 Row Level Security
+RLS está **desactivado** actualmente ya que la app no tiene autenticación de usuarios. La anon key tiene acceso completo de lectura/escritura.
+
+### 10.5 Conexión
+- **URL**: Variable de entorno `NEXT_PUBLIC_SUPABASE_URL`
+- **Anon Key**: Variable de entorno `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Cliente**: `src/lib/supabase.ts` — `createClient(url, anonKey)`
+
+---
+
+## 11. Tema Visual (`src/lib/theme.ts`)
+
+```
+Fondo        → #0a0e27 (azul oscuro profundo)
+Tarjetas     → glassmorphism con bordes azules semitransparentes
+Accent       → Azul (#3b82f6), Cyan, Violeta, Ámbar, Teal
+Texto        → Slate (claro sobre oscuro)
+```
+
+Colores de gráficos por tipo de categoría:
+- `fixed` → Ámbar (#f59e0b)
+- `variable` → Cyan (#06b6d4)
+- `saving` → Azul (#3b82f6)
+- `investment` → Violeta (#8b5cf6)
+- `income` → Verde (#10b981)
+
+---
+
+## 12. Datos Semilla Fijos (mensual recurrente)
+
+| Concepto | Quién paga | Monto | Categoría |
+|---|---|---|---|
+| Sueldo Marcos | marcos | 1.494,00€ | salary |
+| Sueldo Camila | camila | 2.500,00€ | salary |
+| Alquiler | pareja | 1.150,00€ | rent |
+| Luz/Agua | pareja | 100,00€ | electricity |
+| Internet | pareja | 36,00€ | internet |
+| Subs | pareja | 18,00€ | subscriptions |
+| Mercado | pareja | 400,00€ | market |
+| Transporte Marcos | marcos | 32,70€ | transport |
+| ChatGPT Marcos | marcos | 21,20€ | chatgpt |
+| Transporte Camila | camila | 32,70€ | transport |
+| ChatGPT Camila | camila | 21,20€ | chatgpt |

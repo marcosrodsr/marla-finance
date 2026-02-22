@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TxType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts  Account[]
+  txs       Transaction[] @relation("OwnerTxs")
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  name      String
+  currency  String   @default("EUR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  txs       Transaction[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  kind      TxType   @default(EXPENSE)
+  createdAt DateTime @default(now())
+
+  txs       Transaction[]
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  date        DateTime
+  type        TxType
+  amountCents Int
+  note        String?
+  shared      Boolean  @default(false)
+
+  ownerUserId String
+  owner       User     @relation("OwnerTxs", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+  @@index([ownerUserId, date])
+  @@index([accountId, date])
+}
