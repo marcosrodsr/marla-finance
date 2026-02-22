@@ -6,7 +6,8 @@ const require = createRequire(import.meta.url);
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  // aquí puedes ir metiendo tus opciones de Next si las necesitas
+  // aquí puedes ir metieno tus opciones de Next si las necesitas
+  turbopack: {},
 };
 
 const withPWA = require("next-pwa")({
