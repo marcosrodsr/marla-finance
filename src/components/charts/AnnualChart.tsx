@@ -163,112 +163,114 @@ export default function AnnualChart({ transactions, categories, year, currentUse
             </div>
 
             {/* ── Chart SVG ── */}
-            <div className="w-full" onMouseLeave={() => setHoveredMonth(null)}>
-                <svg
-                    viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-                    preserveAspectRatio="xMidYMid meet"
-                    className="w-full"
-                    style={{ height: "auto", minHeight: 220, maxHeight: 320 }}
-                >
-                    {/* Y grid lines + labels */}
-                    {Array.from({ length: 6 }, (_, i) => {
-                        const t = i / 5;
-                        const val = maxVal * (1 - t);
-                        const y = PAD_T + CHART_H * t;
-                        return (
-                            <g key={i}>
-                                <line x1={PAD_L} y1={y} x2={PAD_L + CHART_W} y2={y}
-                                    stroke={i === 5 ? "#334155" : "#1e293b"}
-                                    strokeWidth={i === 5 ? "1.5" : "1"}
-                                    strokeDasharray={i === 0 || i === 5 ? "none" : "5 5"} />
-                                <text x={PAD_L - 10} y={y} textAnchor="end" dominantBaseline="middle"
-                                    fill="#475569" fontSize="11" fontFamily="ui-sans-serif,system-ui,sans-serif">
-                                    {val > 0 ? `${(val / 100).toFixed(0)}€` : "0"}
-                                </text>
-                            </g>
-                        );
-                    })}
+            <div className="w-full overflow-x-auto pb-4 overscroll-x-contain hide-scrollbar" onMouseLeave={() => setHoveredMonth(null)}>
+                <div className="min-w-[600px] sm:min-w-full">
+                    <svg
+                        viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+                        preserveAspectRatio="xMidYMid meet"
+                        className="w-full"
+                        style={{ height: "auto", minHeight: 220, maxHeight: 320 }}
+                    >
+                        {/* Y grid lines + labels */}
+                        {Array.from({ length: 6 }, (_, i) => {
+                            const t = i / 5;
+                            const val = maxVal * (1 - t);
+                            const y = PAD_T + CHART_H * t;
+                            return (
+                                <g key={i}>
+                                    <line x1={PAD_L} y1={y} x2={PAD_L + CHART_W} y2={y}
+                                        stroke={i === 5 ? "#334155" : "#1e293b"}
+                                        strokeWidth={i === 5 ? "1.5" : "1"}
+                                        strokeDasharray={i === 0 || i === 5 ? "none" : "5 5"} />
+                                    <text x={PAD_L - 10} y={y} textAnchor="end" dominantBaseline="middle"
+                                        fill="#475569" fontSize="11" fontFamily="ui-sans-serif,system-ui,sans-serif">
+                                        {val > 0 ? `${(val / 100).toFixed(0)}€` : "0"}
+                                    </text>
+                                </g>
+                            );
+                        })}
 
-                    {/* Month hover zones + X labels */}
-                    {MONTHS.map((label, i) => {
-                        const x = xOf(i);
-                        const colW = CHART_W / 12;
-                        const future = i > curMonth;
-                        const isHov = hoveredMonth === i;
-                        const isCur = i === curMonth;
-                        return (
-                            <g key={i}>
-                                <rect
-                                    x={x - colW / 2} y={PAD_T}
-                                    width={colW} height={CHART_H}
-                                    fill={isHov ? "rgba(99,102,241,0.08)" : "transparent"}
-                                    rx="4"
-                                    style={{ cursor: "crosshair" }}
-                                    onMouseEnter={() => {
-                                        if (mode === "real" && future) return;
-                                        setHoveredMonth(i);
-                                    }}
-                                />
-                                {isHov && (
-                                    <line x1={x} y1={PAD_T} x2={x} y2={PAD_T + CHART_H}
-                                        stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 4" opacity={0.5} />
-                                )}
-                                {isCur && !isHov && (
-                                    <rect x={x - colW / 2} y={PAD_T} width={colW} height={CHART_H}
-                                        fill="rgba(99,102,241,0.04)" rx="4" />
-                                )}
-                                <text x={x} y={PAD_T + CHART_H + 22}
-                                    textAnchor="middle"
-                                    fill={isCur ? "#818cf8" : future ? "#374151" : "#64748b"}
-                                    fontSize="12" fontFamily="ui-sans-serif,system-ui,sans-serif"
-                                    fontWeight={isCur ? "700" : "400"}>
-                                    {label}
-                                </text>
-                            </g>
-                        );
-                    })}
+                        {/* Month hover zones + X labels */}
+                        {MONTHS.map((label, i) => {
+                            const x = xOf(i);
+                            const colW = CHART_W / 12;
+                            const future = i > curMonth;
+                            const isHov = hoveredMonth === i;
+                            const isCur = i === curMonth;
+                            return (
+                                <g key={i}>
+                                    <rect
+                                        x={x - colW / 2} y={PAD_T}
+                                        width={colW} height={CHART_H}
+                                        fill={isHov ? "rgba(99,102,241,0.08)" : "transparent"}
+                                        rx="4"
+                                        style={{ cursor: "crosshair" }}
+                                        onMouseEnter={() => {
+                                            if (mode === "real" && future) return;
+                                            setHoveredMonth(i);
+                                        }}
+                                    />
+                                    {isHov && (
+                                        <line x1={x} y1={PAD_T} x2={x} y2={PAD_T + CHART_H}
+                                            stroke="#6366f1" strokeWidth="1.5" strokeDasharray="4 4" opacity={0.5} />
+                                    )}
+                                    {isCur && !isHov && (
+                                        <rect x={x - colW / 2} y={PAD_T} width={colW} height={CHART_H}
+                                            fill="rgba(99,102,241,0.04)" rx="4" />
+                                    )}
+                                    <text x={x} y={PAD_T + CHART_H + 22}
+                                        textAnchor="middle"
+                                        fill={isCur ? "#818cf8" : future ? "#374151" : "#64748b"}
+                                        fontSize="12" fontFamily="ui-sans-serif,system-ui,sans-serif"
+                                        fontWeight={isCur ? "700" : "400"}>
+                                        {label}
+                                    </text>
+                                </g>
+                            );
+                        })}
 
-                    {/* Series lines + dots */}
-                    {series.map(s => {
-                        const realCoords: [number, number][] = [];
-                        const projCoords: [number, number][] = [];
+                        {/* Series lines + dots */}
+                        {series.map(s => {
+                            const realCoords: [number, number][] = [];
+                            const projCoords: [number, number][] = [];
 
-                        s.points.forEach((p, i) => {
-                            const coord: [number, number] = [xOf(i), yOf(p.val, maxVal)];
-                            if (i <= curMonth) realCoords.push(coord);
-                            if (i >= curMonth) projCoords.push(coord);
-                        });
+                            s.points.forEach((p, i) => {
+                                const coord: [number, number] = [xOf(i), yOf(p.val, maxVal)];
+                                if (i <= curMonth) realCoords.push(coord);
+                                if (i >= curMonth) projCoords.push(coord);
+                            });
 
-                        return (
-                            <g key={s.id}>
-                                {realCoords.length >= 2 && (
-                                    <path d={bezierPath(realCoords)} fill="none"
-                                        stroke={s.color} strokeWidth="2.5"
-                                        strokeLinecap="round" strokeLinejoin="round" />
-                                )}
-                                {mode === "projection" && projCoords.length >= 2 && (
-                                    <path d={bezierPath(projCoords)} fill="none"
-                                        stroke={s.color} strokeWidth="2"
-                                        strokeLinecap="round" strokeLinejoin="round"
-                                        strokeDasharray="7 5" opacity={0.55} />
-                                )}
-                                {s.points.map((p, i) => {
-                                    if (mode === "real" && p.future) return null;
-                                    const isHov = hoveredMonth === i;
-                                    return (
-                                        <circle key={i}
-                                            cx={xOf(i)} cy={yOf(p.val, maxVal)}
-                                            r={isHov ? 5 : 3.5}
-                                            fill={isHov ? s.color : "#0f172a"}
+                            return (
+                                <g key={s.id}>
+                                    {realCoords.length >= 2 && (
+                                        <path d={bezierPath(realCoords)} fill="none"
+                                            stroke={s.color} strokeWidth="2.5"
+                                            strokeLinecap="round" strokeLinejoin="round" />
+                                    )}
+                                    {mode === "projection" && projCoords.length >= 2 && (
+                                        <path d={bezierPath(projCoords)} fill="none"
                                             stroke={s.color} strokeWidth="2"
-                                            opacity={p.future ? 0.55 : 1}
-                                            style={{ transition: "r 0.12s" }} />
-                                    );
-                                })}
-                            </g>
-                        );
-                    })}
-                </svg>
+                                            strokeLinecap="round" strokeLinejoin="round"
+                                            strokeDasharray="7 5" opacity={0.55} />
+                                    )}
+                                    {s.points.map((p, i) => {
+                                        if (mode === "real" && p.future) return null;
+                                        const isHov = hoveredMonth === i;
+                                        return (
+                                            <circle key={i}
+                                                cx={xOf(i)} cy={yOf(p.val, maxVal)}
+                                                r={isHov ? 5 : 3.5}
+                                                fill={isHov ? s.color : "#0f172a"}
+                                                stroke={s.color} strokeWidth="2"
+                                                opacity={p.future ? 0.55 : 1}
+                                                style={{ transition: "r 0.12s" }} />
+                                        );
+                                    })}
+                                </g>
+                            );
+                        })}
+                    </svg>
+                </div>
             </div>
 
             {/* ── Legend ── */}

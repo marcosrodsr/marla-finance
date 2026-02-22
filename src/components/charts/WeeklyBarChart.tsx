@@ -161,62 +161,64 @@ export default function WeeklyBarChart({
             </div>
 
             {/* Contenedor del Gráfico de Barras Verticales */}
-            <div className="relative w-full h-[280px] flex items-end pt-8 pb-8 px-2 sm:px-6">
-                {/* Líneas de cuadrícula (Grid lines) */}
-                <div className="absolute inset-x-0 bottom-8 top-8 flex flex-col justify-between pointer-events-none z-0">
-                    {[1, 0.75, 0.5, 0.25, 0].map((t) => {
-                        const val = MAX_Y_CENTS * t;
-                        return (
-                            <div key={t} className="w-full flex items-center h-0 relative pl-12 sm:pl-16">
-                                <span className="absolute left-0 w-12 sm:w-16 text-right pr-2 text-[10px] text-slate-500 -translate-y-1/2 overflow-visible">
-                                    {val > 0 ? (val / 100).toFixed(0) + " €" : "0"}
-                                </span>
-                                <div className="flex-1 border-t border-dashed border-slate-700/50" />
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Barras */}
-                <div className="w-full h-full flex justify-between items-end z-10 gap-2 sm:gap-6 pl-10 sm:pl-16">
-                    {dataPoints.map((dp, i) => {
-                        // Limitar la altura al 100% (MAX_Y_CENTS) si superara límite, aunque se dibuja usando ese MAX
-                        const percentage = Math.min((dp.value / MAX_Y_CENTS) * 100, 100);
-
-                        return (
-                            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
-                                {/* Tooltip on Hover */}
-                                <div className="absolute -top-8 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg whitespace-nowrap z-20">
-                                    {dp.label}: {formatEur(dp.value)}
+            <div className="w-full overflow-x-auto pb-4 overscroll-x-contain hide-scrollbar">
+                <div className="relative min-w-[450px] sm:min-w-full h-[280px] flex items-end pt-8 pb-8 px-2 sm:px-6">
+                    {/* Líneas de cuadrícula (Grid lines) */}
+                    <div className="absolute inset-x-0 bottom-8 top-8 flex flex-col justify-between pointer-events-none z-0">
+                        {[1, 0.75, 0.5, 0.25, 0].map((t) => {
+                            const val = MAX_Y_CENTS * t;
+                            return (
+                                <div key={t} className="w-full flex items-center h-0 relative pl-12 sm:pl-16">
+                                    <span className="absolute left-0 w-12 sm:w-16 text-right pr-2 text-[10px] text-slate-500 -translate-y-1/2 overflow-visible">
+                                        {val > 0 ? (val / 100).toFixed(0) + " €" : "0"}
+                                    </span>
+                                    <div className="flex-1 border-t border-dashed border-slate-700/50" />
                                 </div>
+                            );
+                        })}
+                    </div>
 
-                                {/* Barra (Vertical) */}
-                                <div className="w-full h-full max-w-[40px] bg-slate-800/50 rounded-t-sm relative flex items-end justify-center overflow-hidden">
+                    {/* Barras */}
+                    <div className="w-full h-full flex justify-between items-end z-10 gap-2 sm:gap-6 pl-10 sm:pl-16">
+                        {dataPoints.map((dp, i) => {
+                            // Limitar la altura al 100% (MAX_Y_CENTS) si superara límite, aunque se dibuja usando ese MAX
+                            const percentage = Math.min((dp.value / MAX_Y_CENTS) * 100, 100);
+
+                            return (
+                                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                                    {/* Tooltip on Hover */}
+                                    <div className="absolute -top-8 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg whitespace-nowrap z-20">
+                                        {dp.label}: {formatEur(dp.value)}
+                                    </div>
+
+                                    {/* Barra (Vertical) */}
+                                    <div className="w-full h-full max-w-[40px] bg-slate-800/50 rounded-t-sm relative flex items-end justify-center overflow-hidden">
+                                        <div
+                                            className="w-full rounded-t-sm transition-all duration-500 ease-out"
+                                            style={{
+                                                height: `${percentage}%`,
+                                                backgroundColor: dp.color,
+                                                boxShadow: `0 0 10px ${dp.color}40`
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Valor numérico (Euros) visible directamente */}
                                     <div
-                                        className="w-full rounded-t-sm transition-all duration-500 ease-out"
-                                        style={{
-                                            height: `${percentage}%`,
-                                            backgroundColor: dp.color,
-                                            boxShadow: `0 0 10px ${dp.color}40`
-                                        }}
-                                    />
-                                </div>
+                                        className="absolute w-full flex justify-center text-[9px] sm:text-[11px] font-bold text-slate-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-20 pointer-events-none transition-all duration-500 ease-out"
+                                        style={{ bottom: `calc(${percentage}% + 6px)` }}
+                                    >
+                                        {dp.value > 0 ? (dp.value / 100).toFixed(0) + "€" : ""}
+                                    </div>
 
-                                {/* Valor numérico (Euros) visible directamente */}
-                                <div
-                                    className="absolute w-full flex justify-center text-[9px] sm:text-[11px] font-bold text-slate-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-20 pointer-events-none transition-all duration-500 ease-out"
-                                    style={{ bottom: `calc(${percentage}% + 6px)` }}
-                                >
-                                    {dp.value > 0 ? (dp.value / 100).toFixed(0) + "€" : ""}
+                                    {/* Etiqueta X (Label) */}
+                                    <div className="absolute -bottom-6 text-[10px] sm:text-xs font-medium text-slate-400 text-center truncate w-full">
+                                        {dp.label.split(" ")[0]}
+                                    </div>
                                 </div>
-
-                                {/* Etiqueta X (Label) */}
-                                <div className="absolute -bottom-6 text-[10px] sm:text-xs font-medium text-slate-400 text-center truncate w-full">
-                                    {dp.label.split(" ")[0]}
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
             <div className="mt-4 flex justify-end px-4 sm:px-10 text-[10px] sm:text-xs text-slate-500">

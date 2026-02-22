@@ -9,6 +9,7 @@ import AddPaymentModal from "./AddPaymentModal";
 import AddCategoryModal from "./AddCategoryModal";
 import PlusIcon from "./icons/PlusIcon";
 import Button from "./Button";
+import UpdateBanner from "./UpdateBanner";
 
 type AppShellProps = {
     children: ReactNode;
@@ -23,8 +24,9 @@ export default function AppShell({ children }: AppShellProps) {
 
     return (
         <>
-            <div className="min-h-screen pb-24 lg:pb-0 lg:pl-[280px]">
-                {/* Desktop Header Actions (Injected via Portal? No, just keep layout clean) */}
+            <UpdateBanner />
+            <div className="min-h-[100dvh] pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-[280px]">
+                {/* Desktop Header Actions */}
                 {/* Actually, user requested "Header superior" on desktop with title left and buttons right. 
             Since pages handle their own title/layout, I will render a global desktop header here or let pages do it?
             Request says: "Header superior: título izquierda, botones derecha".
@@ -68,7 +70,7 @@ export default function AppShell({ children }: AppShellProps) {
 
                 <SideNav />
 
-                <main className="flex-1 lg:p-8 animate-in fade-in duration-500">
+                <main className="flex-1 px-4 lg:px-8 py-6 lg:py-8 animate-in fade-in duration-500">
                     <div className="mx-auto max-w-7xl">
                         {children}
                     </div>
@@ -81,7 +83,7 @@ export default function AppShell({ children }: AppShellProps) {
             {showFAB && (
                 <button
                     onClick={() => setIsPaymentModalOpen(true)}
-                    className="lg:hidden fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full shadow-[0_8px_20px_-4px_rgba(59,130,246,0.6)] flex items-center justify-center active:scale-90 transition-transform bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                    className="lg:hidden fixed bottom-[calc(85px+env(safe-area-inset-bottom))] right-6 z-40 w-14 h-14 rounded-full shadow-[0_8px_20px_-4px_rgba(59,130,246,0.6)] flex items-center justify-center active:scale-90 transition-transform bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
                     aria-label="Agregar pago"
                 >
                     <PlusIcon className="w-6 h-6" />

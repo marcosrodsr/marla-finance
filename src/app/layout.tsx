@@ -20,7 +20,6 @@ export const metadata: Metadata = {
 
   // PWA
   manifest: "/manifest.webmanifest",
-  themeColor: "#0B1220",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -33,6 +32,15 @@ export const metadata: Metadata = {
     ],
     apple: "/icons/icon-192.png",
   },
+};
+
+export const viewport = {
+  themeColor: "#0B1220",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

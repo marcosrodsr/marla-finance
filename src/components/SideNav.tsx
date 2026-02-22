@@ -6,30 +6,29 @@ import HomeIcon from "./icons/HomeIcon";
 import ListIcon from "./icons/ListIcon";
 import SettingsIcon from "./icons/SettingsIcon";
 
-// Custom icons
-function MarcosIcon({ className = "w-6 h-6" }: { className?: string }) {
+// Custom icons - Letter Badges
+function MarcosBadge() {
     return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
+        <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+            <span className="text-xs font-bold leading-none">M</span>
+        </div>
     );
 }
 
-function CamilaIcon({ className = "w-6 h-6" }: { className?: string }) {
+function CamilaBadge() {
     return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14c-2 0-3.5-1-3.5-2.5S10 9 12 9s3.5 1 3.5 2.5S14 14 12 14z" />
-        </svg>
+        <div className="w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 flex items-center justify-center">
+            <span className="text-xs font-bold leading-none">C</span>
+        </div>
     );
 }
 
 const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: HomeIcon },
-    { href: "/marcos", label: "Marcos", icon: MarcosIcon },
-    { href: "/camila", label: "Camila", icon: CamilaIcon },
-    { href: "/transactions", label: "Movimientos", icon: ListIcon },
-    { href: "/settings", label: "Ajustes", icon: SettingsIcon },
+    { href: "/dashboard", label: "Dashboard", icon: HomeIcon, isBadge: false },
+    { href: "/marcos", label: "Marcos", icon: MarcosBadge, isBadge: true },
+    { href: "/camila", label: "Camila", icon: CamilaBadge, isBadge: true },
+    { href: "/transactions", label: "Movimientos", icon: ListIcon, isBadge: false },
+    { href: "/settings", label: "Ajustes", icon: SettingsIcon, isBadge: false },
 ];
 
 export default function SideNav() {
@@ -60,7 +59,9 @@ export default function SideNav() {
                                 }
               `}
                         >
-                            <Icon className={`w-6 h-6 transition-colors ${isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`} />
+                            <div className={`transition-colors flex-shrink-0 ${isActive && !item.isBadge ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`}>
+                                <Icon />
+                            </div>
                             <span className={`font-medium ${isActive ? "translate-x-1" : ""} transition-transform duration-300`}>
                                 {item.label}
                             </span>

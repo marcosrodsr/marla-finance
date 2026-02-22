@@ -7,30 +7,29 @@ import ListIcon from "./icons/ListIcon";
 import SettingsIcon from "./icons/SettingsIcon";
 
 // Redefining simpler versions for mobile
-function MobileMarcosIcon({ className = "w-6 h-6" }: { className?: string }) {
+// Redefining simpler versions for mobile - Letter Badges
+function MobileMarcosBadge() {
     return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 7v10M12 12h5" />
-        </svg>
+        <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
+            <span className="text-xs font-bold leading-none">M</span>
+        </div>
     );
 }
 
-function MobileCamilaIcon({ className = "w-6 h-6" }: { className?: string }) {
+function MobileCamilaBadge() {
     return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="9" strokeWidth={1.5} />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 7v10M8 12h8" />
-        </svg>
+        <div className="w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 flex items-center justify-center">
+            <span className="text-xs font-bold leading-none">C</span>
+        </div>
     );
 }
 
 const navItems = [
-    { href: "/dashboard", icon: HomeIcon, label: "Home" },
-    { href: "/marcos", icon: MobileMarcosIcon, label: "Marcos" },
-    { href: "/camila", icon: MobileCamilaIcon, label: "Camila" },
-    { href: "/transactions", icon: ListIcon, label: "Lista" },
-    { href: "/settings", icon: SettingsIcon, label: "Ajustes" },
+    { href: "/dashboard", icon: HomeIcon, label: "Home", isBadge: false },
+    { href: "/marcos", icon: MobileMarcosBadge, label: "Marcos", isBadge: true },
+    { href: "/camila", icon: MobileCamilaBadge, label: "Camila", isBadge: true },
+    { href: "/transactions", icon: ListIcon, label: "Movs", isBadge: false },
+    { href: "/settings", icon: SettingsIcon, label: "Ajustes", isBadge: false },
 ];
 
 export default function BottomNav() {
@@ -55,15 +54,20 @@ export default function BottomNav() {
                             className="relative flex flex-col items-center justify-center flex-1 h-full group active:scale-95 transition-transform duration-200"
                         >
                             <div
-                                className={`p-1 rounded-xl transition-all duration-300 ${isActive ? '-translate-y-1' : ''}`}
-                                style={isActive ? { color: '#60a5fa' } : { color: '#64748b' }}
+                                className={`p-1 rounded-xl transition-all duration-300 ${isActive ? '-translate-y-0.5' : ''}`}
+                                style={isActive && !item.isBadge ? { color: '#60a5fa' } : !item.isBadge ? { color: '#64748b' } : {}}
                             >
-                                <Icon className="w-6 h-6" />
+                                <Icon />
                             </div>
+
+                            {/* Label */}
+                            <span className={`text-[10px] sm:text-xs font-medium transition-colors ${isActive ? 'text-blue-400' : 'text-slate-500'}`}>
+                                {item.label}
+                            </span>
 
                             {isActive && (
                                 <div
-                                    className="absolute bottom-2 w-1 h-1 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
+                                    className="absolute -top-1 w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]"
                                 />
                             )}
                         </Link>
