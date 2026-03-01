@@ -170,7 +170,7 @@ export default function WeeklyBarChart({
                             return (
                                 <div key={t} className="w-full flex items-center h-0 relative pl-12 sm:pl-16">
                                     <span className="absolute left-0 w-12 sm:w-16 text-right pr-2 text-[10px] text-slate-500 -translate-y-1/2 overflow-visible">
-                                        {val > 0 ? (val / 100).toFixed(0) + " €" : "0"}
+                                        {val > 0 ? (val / 100).toFixed(2) + " €" : "0"}
                                     </span>
                                     <div className="flex-1 border-t border-dashed border-slate-700/50" />
                                 </div>
@@ -208,7 +208,7 @@ export default function WeeklyBarChart({
                                         className="absolute w-full flex justify-center text-[9px] sm:text-[11px] font-bold text-slate-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-20 pointer-events-none transition-all duration-500 ease-out"
                                         style={{ bottom: `calc(${percentage}% + 6px)` }}
                                     >
-                                        {dp.value > 0 ? (dp.value / 100).toFixed(0) + "€" : ""}
+                                        {dp.value > 0 ? (dp.value / 100).toFixed(2) + "€" : ""}
                                     </div>
 
                                     {/* Etiqueta X (Label) */}

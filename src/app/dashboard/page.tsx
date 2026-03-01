@@ -147,7 +147,7 @@ export default function DashboardPage() {
             </div>
 
             {/* KPIs Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6">
                 <StatCard
                     label="Ingresos"
                     value={formatEur(income)}

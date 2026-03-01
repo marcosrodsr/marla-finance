@@ -150,7 +150,7 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
             </div>
 
             {/* KPIs Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                 <StatCard label="Ingresos" value={formatEur(income)} trend="up" />
                 <StatCard label="Gastos Fijos" value={formatEur(fixed)} trend="down" />
                 <StatCard label="Gastos Recur." value={formatEur(recurring)} trend="down" />

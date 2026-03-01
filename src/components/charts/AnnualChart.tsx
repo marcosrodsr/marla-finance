@@ -184,7 +184,7 @@ export default function AnnualChart({ transactions, categories, year, currentUse
                                         strokeDasharray={i === 0 || i === 5 ? "none" : "5 5"} />
                                     <text x={PAD_L - 10} y={y} textAnchor="end" dominantBaseline="middle"
                                         fill="#475569" fontSize="11" fontFamily="ui-sans-serif,system-ui,sans-serif">
-                                        {val > 0 ? `${(val / 100).toFixed(0)}€` : "0"}
+                                        {val > 0 ? `${(val / 100).toFixed(2)}€` : "0"}
                                     </text>
                                 </g>
                             );
