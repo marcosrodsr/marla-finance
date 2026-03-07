@@ -9,7 +9,88 @@ import Card from "@/components/Card";
 import AddPaymentModal from "@/components/AddPaymentModal";
 import ExcelJS from "exceljs";
 
-// Reusable shared-expense row — shows detail panel + edit/delete
+// ── Mobile Card ────────────────────────────────────────────────────────
+function SharedExpenseCard({
+    txId,
+    categoryIcon,
+    categoryLabel,
+    note,
+    date,
+    totalCents,
+    eachShareCents,
+    marcosSaldo,
+    paidBy,
+    accentColor,
+    onEdit,
+    onDelete,
+    deleteConfirmId,
+}: {
+    txId: string;
+    categoryIcon: string;
+    categoryLabel: string;
+    note?: string;
+    date: string;
+    totalCents: number;
+    eachShareCents: number;
+    marcosSaldo: number;
+    paidBy: "marcos" | "camila";
+    accentColor: "blue" | "pink";
+    onEdit: () => void;
+    onDelete: (id: string, e: React.MouseEvent) => void;
+    deleteConfirmId: string | null;
+}) {
+    const isDeleting = deleteConfirmId === txId;
+    const blue = accentColor === "blue";
+    const accentText = blue ? "text-blue-400" : "text-pink-400";
+    const accentBg = blue ? "bg-blue-500/10 border-blue-500/20" : "bg-pink-500/10 border-pink-500/20";
+
+    return (
+        <div
+            onClick={onEdit}
+            className={`cursor-pointer rounded-2xl border p-3.5 transition-all active:scale-[0.98] ${isDeleting ? "bg-red-500/10 border-red-500/30" : `${accentBg}`}`}
+        >
+            <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-800/40 flex items-center justify-center text-lg shrink-0">
+                        {categoryIcon}
+                    </div>
+                    <div className="min-w-0">
+                        <div className="font-bold text-sm text-slate-200 truncate leading-tight">{categoryLabel}</div>
+                        {note && <div className="text-[10px] text-slate-400 truncate mt-0.5">{note}</div>}
+                    </div>
+                </div>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
+                    className={`shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all ${isDeleting
+                        ? "bg-red-500 text-white shadow-md shadow-red-500/30"
+                        : "bg-white/5 text-slate-400 active:text-red-400"
+                        }`}
+                >
+                    {isDeleting ? "✓ Confirm" : "Eliminar"}
+                </button>
+            </div>
+
+            <div className="flex items-center justify-between pt-2.5 border-t border-white/5">
+                <div className="text-xs text-slate-500 font-medium bg-white/5 px-2 py-1 rounded-md">
+                    {formatDate(date)}
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="text-right">
+                        <div className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold mb-0.5">Pagado</div>
+                        <div className="text-xs font-semibold text-slate-300">{formatEur(totalCents)}</div>
+                    </div>
+                    <div className="w-px h-6 bg-white/5" />
+                    <div className="text-right">
+                        <div className={`text-[9px] uppercase tracking-widest font-bold ${accentText} opacity-80 mb-0.5`}>Deuda</div>
+                        <div className={`text-sm font-black tracking-tight ${accentText}`}>{formatEur(eachShareCents)}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Desktop table row ──────────────────────────────────────────────────
 function SharedExpenseRow({
     txId,
     categoryIcon,
@@ -78,6 +159,9 @@ function SharedExpenseRow({
         </tr>
     );
 }
+
+
+
 
 // Full-table row (detailed table at the bottom)
 function FullSharedRow({
@@ -400,48 +484,74 @@ export default function DeudasPage() {
                         </div>
                     </div>
                     {marcosRows.length > 0 && (
-                        <div className="overflow-x-auto mt-1">
+                        <div className="mt-1">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Gastos compartidos que pagó — click para editar</p>
-                            <table className="w-full text-xs">
-                                <thead>
-                                    <tr className="text-slate-500 uppercase tracking-wider border-b border-white/10 text-[9px]">
-                                        <th className="pb-2 font-bold text-left">Concepto</th>
-                                        <th className="pb-2 font-bold px-2">Fecha</th>
-                                        <th className="pb-2 font-bold text-right">T. Pagado</th>
-                                        <th className="pb-2 font-bold text-right pl-2">T. Deuda</th>
-                                        <th className="pb-2"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {marcosRows.map((r) => (
-                                        <SharedExpenseRow
-                                            key={r.txId}
-                                            txId={r.txId}
-                                            categoryIcon={r.categoryIcon}
-                                            categoryLabel={r.categoryLabel}
-                                            note={r.note}
-                                            date={r.date}
-                                            totalCents={r.totalCents}
-                                            eachShareCents={r.eachShareCents}
-                                            marcosSaldo={r.marcosSaldo}
-                                            paidBy={r.paidBy as "marcos" | "camila"}
-                                            accentColor="blue"
-                                            onEdit={() => handleEdit(r.txId)}
-                                            onDelete={handleDelete}
-                                            deleteConfirmId={deleteConfirmId}
-                                            setDeleteConfirmId={setDeleteConfirmId}
-                                        />
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="border-t border-blue-500/20">
-                                        <td colSpan={2} className="pt-2 font-bold text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL</td>
-                                        <td className="pt-2 text-right font-bold text-slate-200 text-[11px]">{formatEur(marcosTotalSharedPaid)}</td>
-                                        <td className="pt-2 text-right font-black text-blue-300 pl-2 text-[11px]">{formatEur(marcosTotalOwed)}</td>
-                                        <td />
-                                    </tr>
-                                </tfoot>
-                            </table>
+
+                            {/* Mobile Grid */}
+                            <div className="flex flex-col gap-2 sm:hidden">
+                                {marcosRows.map((r) => (
+                                    <SharedExpenseCard
+                                        key={r.txId}
+                                        txId={r.txId}
+                                        categoryIcon={r.categoryIcon}
+                                        categoryLabel={r.categoryLabel}
+                                        note={r.note}
+                                        date={r.date}
+                                        totalCents={r.totalCents}
+                                        eachShareCents={r.eachShareCents}
+                                        marcosSaldo={r.marcosSaldo}
+                                        paidBy={r.paidBy as "marcos" | "camila"}
+                                        accentColor="blue"
+                                        onEdit={() => handleEdit(r.txId)}
+                                        onDelete={handleDelete}
+                                        deleteConfirmId={deleteConfirmId}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Desktop Table */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="text-slate-500 uppercase tracking-wider border-b border-white/10 text-[9px]">
+                                            <th className="pb-2 font-bold text-left">Concepto</th>
+                                            <th className="pb-2 font-bold px-2">Fecha</th>
+                                            <th className="pb-2 font-bold text-right">T. Pagado</th>
+                                            <th className="pb-2 font-bold text-right pl-2">T. Deuda</th>
+                                            <th className="pb-2"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {marcosRows.map((r) => (
+                                            <SharedExpenseRow
+                                                key={r.txId}
+                                                txId={r.txId}
+                                                categoryIcon={r.categoryIcon}
+                                                categoryLabel={r.categoryLabel}
+                                                note={r.note}
+                                                date={r.date}
+                                                totalCents={r.totalCents}
+                                                eachShareCents={r.eachShareCents}
+                                                marcosSaldo={r.marcosSaldo}
+                                                paidBy={r.paidBy as "marcos" | "camila"}
+                                                accentColor="blue"
+                                                onEdit={() => handleEdit(r.txId)}
+                                                onDelete={handleDelete}
+                                                deleteConfirmId={deleteConfirmId}
+                                                setDeleteConfirmId={setDeleteConfirmId}
+                                            />
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="border-t border-blue-500/20">
+                                            <td colSpan={2} className="pt-2 font-bold text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL</td>
+                                            <td className="pt-2 text-right font-bold text-slate-200 text-[11px]">{formatEur(marcosTotalSharedPaid)}</td>
+                                            <td className="pt-2 text-right font-black text-blue-300 pl-2 text-[11px]">{formatEur(marcosTotalOwed)}</td>
+                                            <td />
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                     )}
                     {marcosRows.length === 0 && <p className="text-xs text-slate-500 italic text-center py-4">Marcos no ha pagado gastos compartidos este periodo</p>}
@@ -474,48 +584,74 @@ export default function DeudasPage() {
                         </div>
                     </div>
                     {camilaRows.length > 0 && (
-                        <div className="overflow-x-auto mt-1">
+                        <div className="mt-1">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Gastos compartidos que pagó — click para editar</p>
-                            <table className="w-full text-xs">
-                                <thead>
-                                    <tr className="text-slate-500 uppercase tracking-wider border-b border-white/10 text-[9px]">
-                                        <th className="pb-2 font-bold text-left">Concepto</th>
-                                        <th className="pb-2 font-bold px-2">Fecha</th>
-                                        <th className="pb-2 font-bold text-right">T. Pagado</th>
-                                        <th className="pb-2 font-bold text-right pl-2">T. Deuda</th>
-                                        <th className="pb-2"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5">
-                                    {camilaRows.map((r) => (
-                                        <SharedExpenseRow
-                                            key={r.txId}
-                                            txId={r.txId}
-                                            categoryIcon={r.categoryIcon}
-                                            categoryLabel={r.categoryLabel}
-                                            note={r.note}
-                                            date={r.date}
-                                            totalCents={r.totalCents}
-                                            eachShareCents={r.eachShareCents}
-                                            marcosSaldo={r.marcosSaldo}
-                                            paidBy={r.paidBy as "marcos" | "camila"}
-                                            accentColor="pink"
-                                            onEdit={() => handleEdit(r.txId)}
-                                            onDelete={handleDelete}
-                                            deleteConfirmId={deleteConfirmId}
-                                            setDeleteConfirmId={setDeleteConfirmId}
-                                        />
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="border-t border-pink-500/20">
-                                        <td colSpan={2} className="pt-2 font-bold text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL</td>
-                                        <td className="pt-2 text-right font-bold text-slate-200 text-[11px]">{formatEur(camilaTotalSharedPaid)}</td>
-                                        <td className="pt-2 text-right font-black text-pink-300 pl-2 text-[11px]">{formatEur(camilaTotalOwed)}</td>
-                                        <td />
-                                    </tr>
-                                </tfoot>
-                            </table>
+
+                            {/* Mobile Grid */}
+                            <div className="flex flex-col gap-2 sm:hidden">
+                                {camilaRows.map((r) => (
+                                    <SharedExpenseCard
+                                        key={r.txId}
+                                        txId={r.txId}
+                                        categoryIcon={r.categoryIcon}
+                                        categoryLabel={r.categoryLabel}
+                                        note={r.note}
+                                        date={r.date}
+                                        totalCents={r.totalCents}
+                                        eachShareCents={r.eachShareCents}
+                                        marcosSaldo={r.marcosSaldo}
+                                        paidBy={r.paidBy as "marcos" | "camila"}
+                                        accentColor="pink"
+                                        onEdit={() => handleEdit(r.txId)}
+                                        onDelete={handleDelete}
+                                        deleteConfirmId={deleteConfirmId}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Desktop Table */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="text-slate-500 uppercase tracking-wider border-b border-white/10 text-[9px]">
+                                            <th className="pb-2 font-bold text-left">Concepto</th>
+                                            <th className="pb-2 font-bold px-2">Fecha</th>
+                                            <th className="pb-2 font-bold text-right">T. Pagado</th>
+                                            <th className="pb-2 font-bold text-right pl-2">T. Deuda</th>
+                                            <th className="pb-2"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {camilaRows.map((r) => (
+                                            <SharedExpenseRow
+                                                key={r.txId}
+                                                txId={r.txId}
+                                                categoryIcon={r.categoryIcon}
+                                                categoryLabel={r.categoryLabel}
+                                                note={r.note}
+                                                date={r.date}
+                                                totalCents={r.totalCents}
+                                                eachShareCents={r.eachShareCents}
+                                                marcosSaldo={r.marcosSaldo}
+                                                paidBy={r.paidBy as "marcos" | "camila"}
+                                                accentColor="pink"
+                                                onEdit={() => handleEdit(r.txId)}
+                                                onDelete={handleDelete}
+                                                deleteConfirmId={deleteConfirmId}
+                                                setDeleteConfirmId={setDeleteConfirmId}
+                                            />
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="border-t border-pink-500/20">
+                                            <td colSpan={2} className="pt-2 font-bold text-slate-500 uppercase tracking-tighter text-[9px]">TOTAL</td>
+                                            <td className="pt-2 text-right font-bold text-slate-200 text-[11px]">{formatEur(camilaTotalSharedPaid)}</td>
+                                            <td className="pt-2 text-right font-black text-pink-300 pl-2 text-[11px]">{formatEur(camilaTotalOwed)}</td>
+                                            <td />
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                     )}
                     {camilaRows.length === 0 && <p className="text-xs text-slate-500 italic text-center py-4">Camila no ha pagado gastos compartidos este periodo</p>}

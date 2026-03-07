@@ -40,7 +40,6 @@ const navItems = [
     { href: "/camila", icon: MobileCamilaBadge, label: "Camila", isBadge: true },
     { href: "/transactions", icon: ListIcon, label: "Movs", isBadge: false },
     { href: "/deudas", icon: DebtIcon, label: "Deudas", isBadge: false },
-    { href: "/settings", icon: SettingsIcon, label: "Ajustes", isBadge: false },
 ];
 
 export default function BottomNav() {
