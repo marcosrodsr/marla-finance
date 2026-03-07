@@ -6,6 +6,15 @@ import HomeIcon from "./icons/HomeIcon";
 import ListIcon from "./icons/ListIcon";
 import SettingsIcon from "./icons/SettingsIcon";
 
+// Debt/balance icon
+function DebtIcon() {
+    return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636 5.636 18.364" />
+        </svg>
+    );
+}
+
 // Custom icons - Letter Badges
 function MarcosBadge() {
     return (
@@ -28,6 +37,7 @@ const navItems = [
     { href: "/marcos", label: "Marcos", icon: MarcosBadge, isBadge: true },
     { href: "/camila", label: "Camila", icon: CamilaBadge, isBadge: true },
     { href: "/transactions", label: "Movimientos", icon: ListIcon, isBadge: false },
+    { href: "/deudas", label: "Deudas", icon: DebtIcon, isBadge: false },
     { href: "/settings", label: "Ajustes", icon: SettingsIcon, isBadge: false },
 ];
 

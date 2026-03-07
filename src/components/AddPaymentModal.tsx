@@ -18,6 +18,7 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
     const { users, categories, addTransaction, updateTransaction } = useFinance();
 
     const [userId, setUserId] = useState<string | null>(null);
+    const [paidBy, setPaidBy] = useState<"marcos" | "camila" | null>(null);
     const [categoryId, setCategoryId] = useState<string | null>(null);
     const [amount, setAmount] = useState("");
     const [date, setDate] = useState(() => {
@@ -31,14 +32,15 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
     useEffect(() => {
         if (initialData) {
             setUserId(initialData.userId);
+            setPaidBy(initialData.paidBy ?? null);
             setCategoryId(initialData.categoryId);
             setAmount((initialData.amountCents / 100).toString().replace(".", ","));
             setDate(initialData.date);
             setNote(initialData.note || "");
         } else {
-            // Reset defaults
-            if (!isOpen) { // Only reset when closing/opening fresh
-                setUserId(null); // Or keep previous? Better reset
+            if (!isOpen) {
+                setUserId(null);
+                setPaidBy(null);
                 setCategoryId(null);
                 setAmount("");
                 setDate(new Date().toISOString().split('T')[0]);
@@ -47,12 +49,24 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
         }
     }, [initialData, isOpen]);
 
+    // Reset paidBy when userId changes away from pareja
+    useEffect(() => {
+        if (userId !== "pareja") {
+            setPaidBy(null);
+        }
+    }, [userId]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
         if (!userId) {
             setError("Selecciona quién paga");
+            return;
+        }
+
+        if (userId === "pareja" && !paidBy) {
+            setError("Indica quién pagó físicamente este gasto compartido");
             return;
         }
 
@@ -78,7 +92,8 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
             amountCents,
             date,
             note: note.trim() || undefined,
-            isShared: initialData?.isShared // Preserve isShared flag if present in initialData
+            isShared: initialData?.isShared,
+            paidBy: userId === "pareja" ? paidBy ?? undefined : undefined,
         };
 
         if (initialData && initialData.id) {
@@ -97,9 +112,10 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
             setNote("");
         }
         onClose();
-    }
+    };
 
     const isEdit = !!initialData?.id;
+    const isPareja = userId === "pareja";
 
     return (
         <Modal isOpen={isOpen} onClose={handleClose} title={isEdit ? "Editar pago" : "Agregar pago"}>
@@ -128,6 +144,34 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
                         ))}
                     </div>
                 </div>
+
+                {/* paidBy selector — only shown for pareja transactions */}
+                {isPareja && (
+                    <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-4">
+                        <label className="block text-sm font-semibold text-yellow-400/90 mb-3">
+                            ⚡ ¿Quién pagó físicamente? *
+                        </label>
+                        <p className="text-xs text-slate-400 mb-3">Este campo se usa para calcular quién le debe a quién en la sección de deudas.</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {(["marcos", "camila"] as const).map((person) => (
+                                <button
+                                    key={person}
+                                    type="button"
+                                    onClick={() => setPaidBy(person)}
+                                    className={`
+                                        px-4 py-3 rounded-xl border transition-all duration-200 font-medium capitalize
+                                        ${paidBy === person
+                                            ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/50"
+                                            : "bg-zinc-800/50 text-zinc-300 border-zinc-700 hover:border-zinc-600"
+                                        }
+                                    `}
+                                >
+                                    {person.charAt(0).toUpperCase() + person.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Category selection */}
                 <div>

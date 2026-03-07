@@ -497,3 +497,85 @@ export function getMonthlyPersonalSavingsForYear(
     }
     return result;
 }
+
+// --- Debt Calculation ---
+
+export type DebtRow = {
+    txId: string;
+    date: string;
+    categoryLabel: string;
+    categoryIcon: string;
+    note?: string;
+    totalCents: number;
+    paidBy: "marcos" | "camila";
+    eachShareCents: number;
+    marcosSaldo: number; // positive = Camila owes Marcos; negative = Marcos owes Camila
+};
+
+export type DebtSummary = {
+    rows: DebtRow[];
+    netCents: number; // positive → Camila owes Marcos; negative → Marcos owes Camila
+    debtor: "camila" | "marcos" | null;
+    debtorOwes: number; // always positive
+};
+
+import { DebtAdjustment } from "@/types";
+
+export function calculateSharedDebt(
+    transactions: Transaction[],
+    categories: Category[],
+    adjustments: DebtAdjustment[] = [],
+    month?: number,
+    year?: number
+): DebtSummary {
+    const sharedTxs = transactions.filter((tx) => {
+        if (tx.userId !== "pareja") return false;
+        if (!tx.paidBy) return false;
+        const cat = categories.find((c) => c.id === tx.categoryId);
+        if (cat?.kind === "income") return false;
+        if (month !== undefined && year !== undefined) {
+            const d = new Date(tx.date);
+            if (d.getFullYear() !== year || d.getMonth() !== month) return false;
+        }
+        return true;
+    });
+
+    const rows: DebtRow[] = sharedTxs.map((tx) => {
+        const cat = categories.find((c) => c.id === tx.categoryId);
+        const paidBy = tx.paidBy!;
+        const eachShareCents = Math.round(tx.amountCents / 2);
+        const marcosSaldo = paidBy === "marcos" ? eachShareCents : -eachShareCents;
+        return {
+            txId: tx.id,
+            date: tx.date,
+            categoryLabel: cat?.label ?? "Desconocido",
+            categoryIcon: cat?.icon ?? "📝",
+            note: tx.note,
+            totalCents: tx.amountCents,
+            paidBy,
+            eachShareCents,
+            marcosSaldo,
+        };
+    });
+
+    let netCents = rows.reduce((acc, r) => acc + r.marcosSaldo, 0);
+
+    for (const adj of adjustments) {
+        if (month !== undefined && year !== undefined) {
+            const d = new Date(adj.date);
+            if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+        }
+        if (adj.direction === "marcos_to_camila") {
+            netCents -= adj.amountCents;
+        } else {
+            netCents += adj.amountCents;
+        }
+    }
+
+    let debtor: "camila" | "marcos" | null = null;
+    let debtorOwes = 0;
+    if (netCents > 0) { debtor = "camila"; debtorOwes = netCents; }
+    else if (netCents < 0) { debtor = "marcos"; debtorOwes = Math.abs(netCents); }
+
+    return { rows, netCents, debtor, debtorOwes };
+}

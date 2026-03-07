@@ -6,6 +6,16 @@ import HomeIcon from "./icons/HomeIcon";
 import ListIcon from "./icons/ListIcon";
 import SettingsIcon from "./icons/SettingsIcon";
 
+// Debt/balance icon
+function DebtIcon() {
+    return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 12h18M3 18h18" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 3 5 6l4 3M15 3l4 3-4 3" />
+        </svg>
+    );
+}
+
 // Redefining simpler versions for mobile
 // Redefining simpler versions for mobile - Letter Badges
 function MobileMarcosBadge() {
@@ -29,6 +39,7 @@ const navItems = [
     { href: "/marcos", icon: MobileMarcosBadge, label: "Marcos", isBadge: true },
     { href: "/camila", icon: MobileCamilaBadge, label: "Camila", isBadge: true },
     { href: "/transactions", icon: ListIcon, label: "Movs", isBadge: false },
+    { href: "/deudas", icon: DebtIcon, label: "Deudas", isBadge: false },
     { href: "/settings", icon: SettingsIcon, label: "Ajustes", isBadge: false },
 ];
 

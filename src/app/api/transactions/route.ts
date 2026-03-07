@@ -7,12 +7,13 @@ function mapToTransaction(row: Record<string, unknown>): Transaction {
     return {
         id: row.id as string,
         createdAt: row.created_at as string,
-        date: (row.date as string).split("T")[0], // date column comes as YYYY-MM-DD
+        date: (row.date as string).split("T")[0],
         userId: row.user_id as string,
         categoryId: (row.category_id as string) ?? "",
         amountCents: row.amount_cents as number,
         note: (row.note as string) ?? undefined,
         isShared: (row.is_shared as boolean) ?? false,
+        paidBy: (row.paid_by as "marcos" | "camila") ?? undefined,
     };
 }
 
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
             amount_cents: body.amountCents,
             note: body.note ?? null,
             is_shared: body.isShared ?? false,
+            paid_by: body.paidBy ?? null,
         })
         .select()
         .single();

@@ -15,18 +15,19 @@ export type Category = {
     icon: string;
     kind: CategoryKind;
     scope: CategoryScope;
-    limitMonthly?: number; // Limit in cents usually, but user specified amounts. Let's stick to cents for consistency or handle conversion. The user said "300 €", I'll store as number (cents) in logic but maybe simple number in types if clearer? No, let's use cents for all money.
+    limitMonthly?: number;
 };
 
 export type Transaction = {
     id: string;
     createdAt: string; // ISO
     date: string; // YYYY-MM-DD
-    userId: string; // "marcos" | "camila" | "pareja" - mapping to owner
+    userId: string; // "marcos" | "camila" | "pareja"
     categoryId: string;
     amountCents: number;
     note?: string;
-    isShared?: boolean; // Override category scope? Or just for UI?
+    isShared?: boolean;
+    paidBy?: "marcos" | "camila"; // Who physically paid — only relevant for pareja transactions
 };
 
 export type PeriodFilter = "current-month" | "previous-month" | "current-year";
@@ -36,4 +37,16 @@ export type ViewMode = "monthly" | "annual";
 export type MonthYear = {
     month: number; // 0-11
     year: number;
+};
+
+// --- Debt feature ---
+export type DebtAdjustmentDirection = "marcos_to_camila" | "camila_to_marcos";
+
+export type DebtAdjustment = {
+    id: string;
+    createdAt: string; // ISO
+    date: string; // YYYY-MM-DD
+    description: string;
+    amountCents: number;
+    direction: DebtAdjustmentDirection; // "marcos_to_camila" = Marcos pays Camila (reduces Camila's debt)
 };

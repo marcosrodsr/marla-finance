@@ -15,7 +15,7 @@ import {
     getWeeksOfMonth,
     getCurrentWeekIdx
 } from "@/lib/finance";
-import { ViewMode, MonthYear, Transaction } from "@/types";
+import { ViewMode, MonthYear, Transaction, CategoryKind } from "@/types";
 import { theme } from "@/lib/theme";
 import StatCard from "@/components/StatCard";
 import Card from "@/components/Card";
@@ -26,6 +26,8 @@ import AnnualChart from "@/components/charts/AnnualChart";
 import BarChart from "@/components/charts/BarChart";
 import AddPaymentModal from "@/components/AddPaymentModal";
 import TransactionCalendar from "@/components/TransactionCalendar";
+import CategoryDetailsModal from "@/components/CategoryDetailsModal";
+import { Category } from "@/types";
 
 type PersonalDashboardProps = {
     userId: string;
@@ -43,6 +45,8 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
 
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
     const [showCalendar, setShowCalendar] = useState(false);
+    const [kind, setKind] = useState<CategoryKind | null>(null);
+    const [categoryId, setCategoryId] = useState<string | null>(null);
 
     // Filter by user and date (Include Shared)
     const userTransactions = getPersonalViewTransactions(transactions, userId, categories);
@@ -70,6 +74,15 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
         });
     }, [userTransactions, viewMode, date, selectedWeekIdx, weeks, categories]);
 
+    // Category modal state
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const selectedCategory = useMemo(() =>
+        categories.find(c => c.id === selectedCategoryId) || null,
+        [selectedCategoryId, categories]);
+    const categoryTransactions = useMemo(() =>
+        filtered.filter(t => t.categoryId === selectedCategoryId),
+        [filtered, selectedCategoryId]);
+
     const upToDay = viewMode === "monthly" ? (weeks[selectedWeekIdx]?.endDay || 31) : 31;
 
     // Calculate Totals for CURRENT VIEW
@@ -95,10 +108,32 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
 
     const savingsPersonal = getAccumulatedSavings(transactions, categories, date.year, date.month, userId, upToDay);
 
+    // Filtered transactions for the movements list (Month + User + Filters)
+    const movementTransactions = useMemo(() => {
+        const monthTxs = filterByMonthYear(userTransactions, date.month, date.year);
+        let result = monthTxs;
+        if (kind) {
+            result = result.filter(t => {
+                const cat = categories.find(c => c.id === t.categoryId);
+                return cat?.kind === kind;
+            });
+        }
+        if (categoryId) {
+            result = result.filter(t => t.categoryId === categoryId);
+        }
+        return result;
+    }, [userTransactions, date.month, date.year, kind, categoryId, categories]);
 
-    // Top Categories
+    const kindLabels: Record<CategoryKind, string> = {
+        fixed: "Fijos",
+        variable: "Variables",
+        saving: "Ahorros",
+        investment: "Inversiones",
+        income: "Ingresos",
+    };
     const categoryGroups = groupByCategory(filtered, categories, userId);
-    const topCategories = categoryGroups.slice(0, 5).map(g => ({
+    const topCategories = categoryGroups.map(g => ({
+        id: g.category.id,
         label: g.category.label,
         value: g.total,
         icon: g.category.icon,
@@ -201,6 +236,7 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                     <BarChart
                         title="Tus Top Gastos"
                         data={topCategories}
+                        onRowClick={(p) => setSelectedCategoryId(p.id)}
                     />
                 </div>
             </div>
@@ -222,8 +258,62 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                         <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Este mes</div>
                     </div>
                 </div>
+
+                {/* Filters Toolbar */}
+                <div className="flex flex-col lg:flex-row gap-6 mb-8 p-4 rounded-2xl bg-slate-800/20 border border-white/5">
+                    {/* Kind Filter */}
+                    <div className="flex flex-wrap gap-2 flex-1">
+                        <button
+                            onClick={() => setKind(null)}
+                            className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-300 ${kind === null
+                                ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20"
+                                : "bg-slate-800/40 text-slate-400 border-white/5 hover:border-white/10 hover:text-slate-200"
+                                }`}
+                        >
+                            Todos
+                        </button>
+                        {(["fixed", "variable", "income", "saving", "investment"] as CategoryKind[]).map((k) => (
+                            <button
+                                key={k}
+                                onClick={() => setKind(k)}
+                                className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-300 ${kind === k
+                                    ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20"
+                                    : "bg-slate-800/40 text-slate-400 border-white/5 hover:border-white/10 hover:text-slate-200"
+                                    }`}
+                            >
+                                {kindLabels[k]}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Category Dropdown */}
+                    <div className="w-full lg:w-64">
+                        <div className="relative group">
+                            <select
+                                value={categoryId || ""}
+                                onChange={(e) => setCategoryId(e.target.value || null)}
+                                className="w-full appearance-none px-4 py-2.5 rounded-xl bg-slate-800/40 border border-white/5 text-slate-300 text-sm font-medium focus:outline-none focus:border-blue-500/50 cursor-pointer hover:bg-slate-800/60 transition-all"
+                            >
+                                <option value="">Todas las categorías</option>
+                                {categories
+                                    .filter(c => !kind || c.kind === kind)
+                                    .map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.icon} {cat.label}
+                                        </option>
+                                    ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-500 group-hover:text-slate-300 transition-colors">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <TransactionsList
-                    transactions={filterByMonthYear(userTransactions, date.month, date.year)}
+                    transactions={movementTransactions}
                     categories={categories}
                     users={users}
                     limit={10}
@@ -247,6 +337,17 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                     onClose={() => setShowCalendar(false)}
                 />
             )}
+
+            <CategoryDetailsModal
+                isOpen={!!selectedCategoryId}
+                onClose={() => setSelectedCategoryId(null)}
+                category={selectedCategory}
+                transactions={categoryTransactions}
+                categories={categories}
+                users={users}
+                contextUserId={userId}
+                onEdit={setEditingTx}
+            />
         </div>
     );
 }

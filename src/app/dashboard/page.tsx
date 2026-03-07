@@ -26,6 +26,8 @@ import WeeklyBarChart from "@/components/charts/WeeklyBarChart";
 import AnnualChart from "@/components/charts/AnnualChart";
 import AddPaymentModal from "@/components/AddPaymentModal";
 import TransactionCalendar from "@/components/TransactionCalendar";
+import CategoryDetailsModal from "@/components/CategoryDetailsModal";
+import { Category } from "@/types";
 
 export default function DashboardPage() {
     const { transactions, categories, users, loading, error } = useFinance();
@@ -62,6 +64,15 @@ export default function DashboardPage() {
             return tDay <= currentWeek.endDay;
         });
     }, [transactions, viewMode, date, selectedWeekIdx, weeks, categories]);
+
+    // Category modal state
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const selectedCategory = useMemo(() =>
+        categories.find(c => c.id === selectedCategoryId) || null,
+        [selectedCategoryId, categories]);
+    const categoryTransactions = useMemo(() =>
+        filtered.filter(t => t.categoryId === selectedCategoryId),
+        [filtered, selectedCategoryId]);
 
     const upToDay = viewMode === "monthly" ? (weeks[selectedWeekIdx]?.endDay || 31) : 31;
 
@@ -101,9 +112,10 @@ export default function DashboardPage() {
         { name: "Gastos (Var)", data: chartData.spent, color: theme.chart.spent },
     ];
 
-    // Top Categories
+    // Top Categories - ALL categories in order
     const categoryGroups = groupByCategory(filtered, categories, null);
-    const topCategories = categoryGroups.slice(0, 5).map(g => ({
+    const topCategories = categoryGroups.map(g => ({
+        id: g.category.id,
         label: g.category.label,
         value: g.total,
         icon: g.category.icon,
@@ -213,6 +225,7 @@ export default function DashboardPage() {
                     <BarChart
                         title="Top Categorías"
                         data={topCategories}
+                        onRowClick={(p) => setSelectedCategoryId(p.id)}
                     />
                 </div>
             </div>
@@ -260,6 +273,16 @@ export default function DashboardPage() {
                     onClose={() => setShowCalendar(false)}
                 />
             )}
+
+            <CategoryDetailsModal
+                isOpen={!!selectedCategoryId}
+                onClose={() => setSelectedCategoryId(null)}
+                category={selectedCategory}
+                transactions={categoryTransactions}
+                categories={categories}
+                users={users}
+                onEdit={setEditingTx}
+            />
         </div>
     );
 }
