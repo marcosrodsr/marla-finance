@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { useFinance } from "@/store/finance-store";
-import { calculateSharedDebt, formatEur, formatDate } from "@/lib/finance";
+import { calculateSharedDebt, formatEur, formatDate, BASE_PERSONAL_DEBT_CENTS } from "@/lib/finance";
 import { Transaction } from "@/types";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import Card from "@/components/Card";
 import AddPaymentModal from "@/components/AddPaymentModal";
+import DebtManagementModal from "@/components/DebtManagementModal";
 import ExcelJS from "exceljs";
 
 // ── Mobile Card ────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ function SharedExpenseCard({
     accentColor,
     onEdit,
     onDelete,
+    onSettle,
     deleteConfirmId,
 }: {
     txId: string;
@@ -37,6 +39,7 @@ function SharedExpenseCard({
     accentColor: "blue" | "pink";
     onEdit: () => void;
     onDelete: (id: string, e: React.MouseEvent) => void;
+    onSettle: (id: string, e: React.MouseEvent) => void;
     deleteConfirmId: string | null;
 }) {
     const isDeleting = deleteConfirmId === txId;
@@ -59,15 +62,23 @@ function SharedExpenseCard({
                         {note && <div className="text-[10px] text-slate-400 truncate mt-0.5">{note}</div>}
                     </div>
                 </div>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
-                    className={`shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all ${isDeleting
-                        ? "bg-red-500 text-white shadow-md shadow-red-500/30"
-                        : "bg-white/5 text-slate-400 active:text-red-400"
-                        }`}
-                >
-                    {isDeleting ? "✓ Confirm" : "Eliminar"}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onSettle(txId, e); }}
+                        className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 active:scale-95 transition-all"
+                    >
+                        Pagado
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
+                        className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-all ${isDeleting
+                            ? "bg-red-500 text-white shadow-md shadow-red-500/30"
+                            : "bg-white/5 text-slate-400 active:text-red-400"
+                            }`}
+                    >
+                        {isDeleting ? "✓ Confirm" : "Eliminar"}
+                    </button>
+                </div>
             </div>
 
             <div className="flex items-center justify-between pt-2.5 border-t border-white/5">
@@ -104,6 +115,7 @@ function SharedExpenseRow({
     accentColor,
     onEdit,
     onDelete,
+    onSettle,
     deleteConfirmId,
     setDeleteConfirmId,
 }: {
@@ -119,6 +131,7 @@ function SharedExpenseRow({
     accentColor: "blue" | "pink";
     onEdit: () => void;
     onDelete: (id: string, e: React.MouseEvent) => void;
+    onSettle: (id: string, e: React.MouseEvent) => void;
     deleteConfirmId: string | null;
     setDeleteConfirmId: (id: string | null) => void;
 }) {
@@ -145,16 +158,24 @@ function SharedExpenseRow({
                 {formatEur(eachShareCents)}
             </td>
             <td className="py-2.5 pl-3 text-right">
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
-                    className={`text-[10px] font-medium transition-all duration-200 px-2 py-0.5 rounded whitespace-nowrap
-                        ${isDeleting
-                            ? "bg-red-500 text-white shadow-lg shadow-red-500/40"
-                            : "invisible group-hover:visible text-slate-500 hover:text-red-400"
-                        }`}
-                >
-                    {isDeleting ? "Confirmar" : "Eliminar"}
-                </button>
+                <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onSettle(txId, e); }}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                    >
+                        Pagado
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
+                        className={`text-[10px] font-medium transition-all duration-200 px-2 py-0.5 rounded whitespace-nowrap
+                            ${isDeleting
+                                ? "bg-red-500 text-white shadow-lg shadow-red-500/40"
+                                : "text-slate-500 hover:text-red-400"
+                            }`}
+                    >
+                        {isDeleting ? "Confirmar" : "Eliminar"}
+                    </button>
+                </div>
             </td>
         </tr>
     );
@@ -176,6 +197,7 @@ function FullSharedRow({
     paidBy,
     onEdit,
     onDelete,
+    onSettle,
     deleteConfirmId,
 }: {
     txId: string;
@@ -189,6 +211,7 @@ function FullSharedRow({
     paidBy: "marcos" | "camila";
     onEdit: () => void;
     onDelete: (id: string, e: React.MouseEvent) => void;
+    onSettle: (id: string, e: React.MouseEvent) => void;
     deleteConfirmId: string | null;
 }) {
     const isDeleting = deleteConfirmId === txId;
@@ -224,16 +247,24 @@ function FullSharedRow({
                     : `Marcos → ${formatEur(eachShareCents)}`}
             </td>
             <td className="py-3">
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
-                    className={`text-[10px] font-medium transition-all duration-200 px-2 py-0.5 rounded whitespace-nowrap
-                        ${isDeleting
-                            ? "bg-red-500 text-white shadow-lg shadow-red-500/40"
-                            : "invisible group-hover:visible text-slate-500 hover:text-red-400"
-                        }`}
-                >
-                    {isDeleting ? "Confirmar" : "Eliminar"}
-                </button>
+                <div className="flex items-center gap-2 invisible group-hover:visible">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onSettle(txId, e); }}
+                        className="text-[10px] font-medium px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                    >
+                        Pagado
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(txId, e); }}
+                        className={`text-[10px] font-medium transition-all duration-200 px-2 py-1 rounded whitespace-nowrap
+                            ${isDeleting
+                                ? "bg-red-500 text-white shadow-lg shadow-red-500/40"
+                                : "text-slate-500 hover:text-red-400"
+                            }`}
+                    >
+                        {isDeleting ? "Confirmar" : "Eliminar"}
+                    </button>
+                </div>
             </td>
         </tr>
     );
@@ -259,18 +290,27 @@ function xlCell(
 }
 
 export default function DeudasPage() {
-    const { transactions, categories, users, deleteTransaction } = useFinance();
+    const { transactions, categories, users, deleteTransaction, updateTransaction, debtAdjustments } = useFinance();
 
     const now = new Date();
     const [selectedDate, setSelectedDate] = useState({ month: now.getMonth(), year: now.getFullYear() });
     const [viewMode, setViewMode] = useState<"monthly" | "annual">("monthly");
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
 
-    const summary = useMemo(
+    const summaryShared = useMemo(
         () => calculateSharedDebt(transactions, categories, [], selectedDate.month, selectedDate.year),
         [transactions, categories, selectedDate]
     );
+
+    const personalDebtTotalAdjustments = useMemo(() => {
+        return debtAdjustments.reduce((acc, adj) => {
+            return acc + (adj.direction === "marcos_to_camila" ? -adj.amountCents : adj.amountCents);
+        }, 0);
+    }, [debtAdjustments]);
+
+    const personalDebtBalance = BASE_PERSONAL_DEBT_CENTS + personalDebtTotalAdjustments;
 
     const personalStats = useMemo(() => {
         const filtered = transactions.filter((tx) => {
@@ -301,8 +341,11 @@ export default function DeudasPage() {
         return stats;
     }, [transactions, categories, selectedDate]);
 
-    const marcosRows = summary.rows.filter((r) => r.paidBy === "marcos");
-    const camilaRows = summary.rows.filter((r) => r.paidBy === "camila");
+    const bannerText = summaryShared.sharedDebtor === "camila" ? "Camila le debe a Marcos" : "Marcos le debe a Camila";
+    const bannerAmount = summaryShared.sharedDebtorOwes;
+
+    const marcosRows = summaryShared.rows.filter((r) => r.paidBy === "marcos");
+    const camilaRows = summaryShared.rows.filter((r) => r.paidBy === "camila");
 
     const marcosTotalSharedPaid = marcosRows.reduce((a, r) => a + r.totalCents, 0);
     const marcosTotalOwed = marcosRows.reduce((a, r) => a + r.eachShareCents, 0);
@@ -321,6 +364,14 @@ export default function DeudasPage() {
         } else {
             setDeleteConfirmId(id);
             setTimeout(() => setDeleteConfirmId(null), 3000);
+        }
+    };
+
+    const handleSettle = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const tx = transactions.find((t) => t.id === id);
+        if (tx) {
+            void updateTransaction(id, { ...tx, isSettled: true });
         }
     };
 
@@ -344,15 +395,15 @@ export default function DeudasPage() {
         xlCell(ws1, "B1", `REPARTICIÓN DE DEUDAS — ${periodLabel.toUpperCase()}`, { bold: true, size: 16, color: WHITE, fill: BLUE_H, align: "center" });
         ws1.getRow(1).height = 36;
         ws1.mergeCells("B3:C3");
-        xlCell(ws1, "B3", "BALANCE NETO", { bold: true, size: 11, color: SLATE, fill: DARK2, align: "center" });
+        xlCell(ws1, "B3", "BALANCE NETO (COMPARTIDOS)", { bold: true, size: 11, color: SLATE, fill: DARK2, align: "center" });
         ws1.getRow(3).height = 22;
-        const netLabel = summary.debtor === null ? "✅ Estáis en paz"
-            : `${summary.debtor === "camila" ? "Camila" : "Marcos"} debe a ${summary.debtor === "camila" ? "Marcos" : "Camila"}`;
+        const netLabel = summaryShared.sharedDebtor === null ? "✅ Estáis en paz"
+            : `${summaryShared.sharedDebtor === "camila" ? "Camila" : "Marcos"} debe a ${summaryShared.sharedDebtor === "camila" ? "Marcos" : "Camila"}`;
         ws1.mergeCells("B4:C4");
         const nc = ws1.getCell("B4");
-        nc.value = netLabel + (summary.debtor !== null ? `   ${(summary.debtorOwes / 100).toFixed(2)} €` : "");
+        nc.value = netLabel + (summaryShared.sharedDebtor !== null ? `   ${(summaryShared.sharedDebtorOwes / 100).toFixed(2)} €` : "");
         nc.font = { name: "Calibri", bold: true, size: 13, color: { argb: WHITE } };
-        nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: summary.debtor === null ? GREEN : AMBER } };
+        nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: summaryShared.sharedDebtor === null ? GREEN : AMBER } };
         nc.alignment = { horizontal: "center", vertical: "middle" };
         ws1.getRow(4).height = 30;
         ws1.getRow(6).height = 24;
@@ -384,7 +435,7 @@ export default function DeudasPage() {
         const hCols = ["B", "C", "D", "E", "F", "G", "H", "I"];
         hdrs.forEach((h, i) => { xlCell(ws2, `${hCols[i]}3`, h, { bold: true, size: 10, color: WHITE, fill: GRAY_H, align: "center", border: true }); });
         ws2.getRow(3).height = 22;
-        summary.rows.forEach((r, idx) => {
+        summaryShared.rows.forEach((r, idx) => {
             const rowNum = 4 + idx, bg = idx % 2 === 1 ? GRAY_R : WHITE;
             const rowData: [string, string][] = [[r.date, "center"], [r.categoryLabel, "left"], [r.note ?? "", "left"], [`${(r.totalCents / 100).toFixed(2)} €`, "right"], [r.paidBy === "marcos" ? "Marcos" : "Camila", "center"], [`${(r.eachShareCents / 100).toFixed(2)} €`, "right"], [r.marcosSaldo > 0 ? `${(r.eachShareCents / 100).toFixed(2)} €` : "", "right"], [r.marcosSaldo < 0 ? `${(r.eachShareCents / 100).toFixed(2)} €` : "", "right"]];
             rowData.forEach(([val, align], i) => {
@@ -393,12 +444,12 @@ export default function DeudasPage() {
             });
             ws2.getRow(rowNum).height = 18;
         });
-        const totRow = 4 + summary.rows.length + 1;
+        const totRow = 4 + summaryShared.rows.length + 1;
         ws2.mergeCells(`B${totRow}:D${totRow}`);
         xlCell(ws2, `B${totRow}`, "TOTAL", { bold: true, size: 11, color: WHITE, fill: GRAY_H, align: "center", border: true });
-        xlCell(ws2, `E${totRow}`, `${(summary.rows.reduce((a, r) => a + r.totalCents, 0) / 100).toFixed(2)} €`, { bold: true, fill: GRAY_H, color: WHITE, align: "right", border: true });
+        xlCell(ws2, `E${totRow}`, `${(summaryShared.rows.reduce((a, r) => a + r.totalCents, 0) / 100).toFixed(2)} €`, { bold: true, fill: GRAY_H, color: WHITE, align: "right", border: true });
         xlCell(ws2, `F${totRow}`, "", { fill: GRAY_H, border: true });
-        xlCell(ws2, `G${totRow}`, `${(summary.rows.reduce((a, r) => a + r.eachShareCents, 0) / 100).toFixed(2)} €`, { bold: true, fill: GRAY_H, color: WHITE, align: "right", border: true });
+        xlCell(ws2, `G${totRow}`, `${(summaryShared.rows.reduce((a, r) => a + r.eachShareCents, 0) / 100).toFixed(2)} €`, { bold: true, fill: GRAY_H, color: WHITE, align: "right", border: true });
         xlCell(ws2, `H${totRow}`, `${(marcosTotalOwed / 100).toFixed(2)} €`, { bold: true, fill: BLUE_L, color: BLUE_H, align: "right", border: true });
         xlCell(ws2, `I${totRow}`, `${(camilaTotalOwed / 100).toFixed(2)} €`, { bold: true, fill: PINK_L, color: PINK_H, align: "right", border: true });
         ws2.getRow(totRow).height = 22;
@@ -418,7 +469,7 @@ export default function DeudasPage() {
         return <div className="flex items-center justify-center h-64 text-slate-400">Cargando...</div>;
     }
 
-    const { rows, debtor, debtorOwes } = summary;
+    const { rows, debtor, debtorOwes, sharedDebtor, sharedDebtorOwes } = summaryShared;
 
     return (
         <div className="space-y-8">
@@ -444,15 +495,18 @@ export default function DeudasPage() {
             </div>
 
             {/* Net Balance Banner */}
-            <div className={`rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${debtor === null ? "bg-emerald-500/5 border-emerald-500/20" : "bg-amber-500/5 border-amber-500/20"}`}>
+            <div className={`rounded-3xl border p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${sharedDebtor === null ? "bg-emerald-500/5 border-emerald-500/20" : "bg-amber-500/5 border-amber-500/20"}`}>
                 <div>
-                    {debtor === null ? (
-                        <><p className="text-emerald-400 font-bold text-lg">✅ Estáis en paz</p><p className="text-slate-400 text-sm mt-0.5">No hay deudas pendientes este periodo</p></>
+                    {sharedDebtor === null ? (
+                        <><p className="text-emerald-400 font-bold text-lg">✅ Estáis en paz</p><p className="text-slate-400 text-sm mt-0.5">No hay deudas compartidas pendientes este periodo</p></>
                     ) : (
-                        <><p className="text-amber-400 font-bold text-lg">{debtor === "camila" ? "Camila le debe a Marcos" : "Marcos le debe a Camila"}</p><p className="text-slate-400 text-sm mt-0.5">Balance neto del periodo seleccionado</p></>
+                        <div className="flex flex-col gap-0.5">
+                            <h2 className="text-amber-400 text-sm font-black uppercase tracking-widest">{bannerText}</h2>
+                            <p className="text-[10px] text-zinc-500 font-medium">Balance neto de gastos compartidos del periodo</p>
+                        </div>
                     )}
                 </div>
-                {debtor !== null && <div className="text-3xl font-bold tracking-tight text-amber-300">{formatEur(debtorOwes)}</div>}
+                {sharedDebtor !== null && <div className="text-3xl font-bold tracking-tight text-amber-300">{formatEur(bannerAmount)}</div>}
             </div>
 
             {/* Individual Breakdown */}
@@ -504,6 +558,7 @@ export default function DeudasPage() {
                                         accentColor="blue"
                                         onEdit={() => handleEdit(r.txId)}
                                         onDelete={handleDelete}
+                                        onSettle={handleSettle}
                                         deleteConfirmId={deleteConfirmId}
                                     />
                                 ))}
@@ -537,6 +592,7 @@ export default function DeudasPage() {
                                                 accentColor="blue"
                                                 onEdit={() => handleEdit(r.txId)}
                                                 onDelete={handleDelete}
+                                                onSettle={handleSettle}
                                                 deleteConfirmId={deleteConfirmId}
                                                 setDeleteConfirmId={setDeleteConfirmId}
                                             />
@@ -583,6 +639,25 @@ export default function DeudasPage() {
                             <span className="font-black text-2xl text-pink-300">{formatEur(camilaTotalOwed)}</span>
                         </div>
                     </div>
+
+                    {/* Personal Debt Tracking Button */}
+                    <div className="bg-pink-600/10 border border-pink-500/20 rounded-2xl p-4 mt-2">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-bold text-pink-400 uppercase tracking-widest">Deuda Personal Total</h3>
+                            <button
+                                onClick={() => setIsDebtModalOpen(true)}
+                                className="px-3 py-1.5 rounded-lg bg-pink-500 text-white text-[10px] font-bold shadow-md shadow-pink-500/30 hover:bg-pink-400 transition-all active:scale-95"
+                            >
+                                Gestionar Pago
+                            </button>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-black text-slate-100">{formatEur(personalDebtBalance)}</span>
+                            <span className="text-[10px] text-slate-500 font-medium">acumulado histórico</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-500 mt-2 italic">Esto es independiente de los gastos del mes</p>
+                    </div>
+
                     {camilaRows.length > 0 && (
                         <div className="mt-1">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Gastos compartidos que pagó — click para editar</p>
@@ -604,6 +679,7 @@ export default function DeudasPage() {
                                         accentColor="pink"
                                         onEdit={() => handleEdit(r.txId)}
                                         onDelete={handleDelete}
+                                        onSettle={handleSettle}
                                         deleteConfirmId={deleteConfirmId}
                                     />
                                 ))}
@@ -637,6 +713,7 @@ export default function DeudasPage() {
                                                 accentColor="pink"
                                                 onEdit={() => handleEdit(r.txId)}
                                                 onDelete={handleDelete}
+                                                onSettle={handleSettle}
                                                 deleteConfirmId={deleteConfirmId}
                                                 setDeleteConfirmId={setDeleteConfirmId}
                                             />
@@ -699,6 +776,7 @@ export default function DeudasPage() {
                                         paidBy={row.paidBy as "marcos" | "camila"}
                                         onEdit={() => handleEdit(row.txId)}
                                         onDelete={handleDelete}
+                                        onSettle={handleSettle}
                                         deleteConfirmId={deleteConfirmId}
                                     />
                                 ))}
@@ -716,11 +794,10 @@ export default function DeudasPage() {
                 )}
             </Card>
 
-            {/* Edit Modal */}
-            <AddPaymentModal
-                isOpen={editingTx !== null}
-                onClose={() => setEditingTx(null)}
-                initialData={editingTx}
+            {/* Debt Management Modal */}
+            <DebtManagementModal
+                isOpen={isDebtModalOpen}
+                onClose={() => setIsDebtModalOpen(false)}
             />
         </div>
     );

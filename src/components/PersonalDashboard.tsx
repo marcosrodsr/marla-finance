@@ -13,7 +13,9 @@ import {
     formatEur,
     getAccumulatedSavings,
     getWeeksOfMonth,
-    getCurrentWeekIdx
+    getCurrentWeekIdx,
+    calculateSharedDebt,
+    BASE_PERSONAL_DEBT_CENTS
 } from "@/lib/finance";
 import { ViewMode, MonthYear, Transaction, CategoryKind } from "@/types";
 import { theme } from "@/lib/theme";
@@ -35,7 +37,7 @@ type PersonalDashboardProps = {
 };
 
 export default function PersonalDashboard({ userId, userName }: PersonalDashboardProps) {
-    const { transactions, categories, users } = useFinance();
+    const { transactions, categories, users, debtAdjustments } = useFinance();
 
     const [viewMode, setViewMode] = useState<ViewMode>("monthly");
     const [date, setDate] = useState<MonthYear>(() => {
@@ -106,7 +108,23 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
         return total;
     }, [transactions, date, upToDay, categories, userId]);
 
-    const savingsPersonal = getAccumulatedSavings(transactions, categories, date.year, date.month, userId, upToDay);
+    const savingsPersonal = getAccumulatedSavings(transactions, categories, date.year, date.month, userId, upToDay, debtAdjustments);
+    // sharedDebtSummary is used to show the "netCents" (shared expenses only)
+
+    const sharedDebtSummary = useMemo(() => {
+        return calculateSharedDebt(transactions, categories, [], date.month, date.year);
+    }, [transactions, categories, date]);
+
+    const personalDebtBalance = useMemo(() => {
+        const totalAdjustments = debtAdjustments.reduce((acc, adj) => {
+            return acc + (adj.direction === "marcos_to_camila" ? -adj.amountCents : adj.amountCents);
+        }, 0);
+        return BASE_PERSONAL_DEBT_CENTS + totalAdjustments;
+    }, [debtAdjustments]);
+
+    // Shared Debt for current month
+    const sharedDebt = userId === "camila" ? (sharedDebtSummary.netCents > 0 ? sharedDebtSummary.netCents : 0) : (sharedDebtSummary.netCents < 0 ? Math.abs(sharedDebtSummary.netCents) : 0);
+    const sharedCredit = userId === "marcos" ? (sharedDebtSummary.netCents > 0 ? sharedDebtSummary.netCents : 0) : (sharedDebtSummary.netCents < 0 ? Math.abs(sharedDebtSummary.netCents) : 0);
 
     // Filtered transactions for the movements list (Month + User + Filters)
     const movementTransactions = useMemo(() => {
@@ -123,6 +141,13 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
         }
         return result;
     }, [userTransactions, date.month, date.year, kind, categoryId, categories]);
+
+    const userDebtAdjustments = useMemo(() => {
+        return debtAdjustments.filter(adj => {
+            const d = new Date(adj.date);
+            return d.getMonth() === date.month && d.getFullYear() === date.year;
+        });
+    }, [debtAdjustments, date.month, date.year]);
 
     const kindLabels: Record<CategoryKind, string> = {
         fixed: "Fijos",
@@ -190,6 +215,7 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 <StatCard label="Gastos Fijos" value={formatEur(fixed)} trend="down" />
                 <StatCard label="Gastos Recur." value={formatEur(recurring)} trend="down" />
                 <StatCard label="Ah. Personal" value={formatEur(savingsPersonal)} subtitle="Acumulado Año" />
+                <StatCard label="Inversiones" value={formatEur(invested)} />
 
                 <StatCard
                     label="Ah. Pareja"
@@ -206,7 +232,19 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                     }
                 />
 
-                <StatCard label="Inversiones" value={formatEur(invested)} />
+                <StatCard
+                    label={sharedDebt > 0 ? "Deuda Mes" : (sharedCredit > 0 ? "Crédito Mes" : "Al día (Mes)")}
+                    value={formatEur(sharedDebt || sharedCredit)}
+                    subtitle="Gastos compartidos"
+                    trend={sharedDebt > 0 ? "down" : (sharedCredit > 0 ? "up" : "neutral")}
+                />
+
+                <StatCard
+                    label={userId === "camila" ? "Deuda Marcos" : "Deuda Camila"}
+                    value={formatEur(personalDebtBalance)}
+                    subtitle="Personal (Histórico)"
+                    trend="neutral"
+                />
             </div>
 
             {/* Charts Section */}
@@ -321,6 +359,45 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                     contextUserId={userId}
                 />
             </Card>
+
+            {/* Debt Payments History */}
+            {userDebtAdjustments.length > 0 && (
+                <Card>
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-slate-200">Pagos de Deuda Personal</h3>
+                        <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Este mes</div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="text-[10px] uppercase tracking-widest text-slate-500 border-b border-white/5">
+                                    <th className="text-left pb-3 pr-4">Concepto</th>
+                                    <th className="text-left pb-3 pr-4">Fecha</th>
+                                    <th className="text-right pb-3 pr-4">Monto</th>
+                                    <th className="text-center pb-3">Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/[0.03]">
+                                {userDebtAdjustments.map((adj) => (
+                                    <tr key={adj.id} className="hover:bg-white/[0.02] transition-colors">
+                                        <td className="py-3 pr-4 text-slate-200 font-medium">{adj.description}</td>
+                                        <td className="py-3 pr-4 text-slate-400">{new Date(adj.date).toLocaleDateString("es-ES")}</td>
+                                        <td className="py-3 pr-4 text-right font-bold text-slate-200">{formatEur(adj.amountCents)}</td>
+                                        <td className="py-3 text-center">
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${adj.direction === (userId === "marcos" ? "camila_to_marcos" : "marcos_to_camila")
+                                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                                }`}>
+                                                {adj.direction === (userId === "marcos" ? "camila_to_marcos" : "marcos_to_camila") ? "Pagado" : "Recibido"}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            )}
 
             <AddPaymentModal
                 isOpen={!!editingTx}

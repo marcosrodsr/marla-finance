@@ -1,0 +1,255 @@
+[
+  {
+    "id": "seed:2026-03:pareja:internet",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-29",
+    "userId": "pareja",
+    "categoryId": "internet",
+    "amountCents": 3600,
+    "note": "Móvil/Internet",
+    "isShared": true
+  },
+  {
+    "id": "seed:2026-03:pareja:subscriptions",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-28",
+    "userId": "pareja",
+    "categoryId": "subscriptions",
+    "amountCents": 1800,
+    "note": "Subs",
+    "isShared": true
+  },
+  {
+    "id": "seed:2026-03:pareja:electricity",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-26",
+    "userId": "pareja",
+    "categoryId": "electricity",
+    "amountCents": 7000,
+    "note": "Luz/Agua",
+    "isShared": true
+  },
+  {
+    "id": "tx-1772572707045-0mrrnjq",
+    "createdAt": "2026-03-03T21:18:27.541964+00:00",
+    "date": "2026-03-23",
+    "userId": "camila",
+    "categoryId": "cat-1772572714299-panh6js",
+    "amountCents": 4500,
+    "note": "Seguro",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772572948184-rckwhql",
+    "createdAt": "2026-03-03T21:22:28.482341+00:00",
+    "date": "2026-03-16",
+    "userId": "camila",
+    "categoryId": "cat-1772480047750-gjeu3ww",
+    "amountCents": 14000,
+    "note": "Terapia",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772573043982-haokh6x",
+    "createdAt": "2026-03-03T21:24:04.58187+00:00",
+    "date": "2026-03-09",
+    "userId": "camila",
+    "categoryId": "investments",
+    "amountCents": 12000,
+    "note": "Pili",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772980019554-cwikch9",
+    "createdAt": "2026-03-08T14:27:00.417658+00:00",
+    "date": "2026-03-08",
+    "userId": "camila",
+    "categoryId": "transport",
+    "amountCents": 1000,
+    "note": "Test 100% Debt",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772980277000-j2y9cnf",
+    "createdAt": "2026-03-08T14:31:17.936275+00:00",
+    "date": "2026-03-08",
+    "userId": "camila",
+    "categoryId": "transport",
+    "amountCents": 1000,
+    "note": "Test 100% Debt",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772902461747-w0f8rnu",
+    "createdAt": "2026-03-07T16:54:22.241193+00:00",
+    "date": "2026-03-07",
+    "userId": "marcos",
+    "categoryId": "outing",
+    "amountCents": 1220,
+    "note": "Sushi",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772807306732-8cfsukp",
+    "createdAt": "2026-03-06T14:28:27.271791+00:00",
+    "date": "2026-03-06",
+    "userId": "pareja",
+    "categoryId": "market",
+    "amountCents": 790,
+    "note": "Gyozas, faltaría pagar camila",
+    "isShared": false,
+    "paidBy": "marcos"
+  },
+  {
+    "id": "tx-1772807356438-ar256mh",
+    "createdAt": "2026-03-06T14:29:17.073933+00:00",
+    "date": "2026-03-06",
+    "userId": "marcos",
+    "categoryId": "market",
+    "amountCents": 239,
+    "note": "Refresco y browniee",
+    "isShared": false
+  },
+  {
+    "id": "seed:2026-03:marcos:transport",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-05",
+    "userId": "marcos",
+    "categoryId": "transport",
+    "amountCents": 3270,
+    "note": "Transporte",
+    "isShared": false
+  },
+  {
+    "id": "seed:2026-03:camila:transport",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-05",
+    "userId": "camila",
+    "categoryId": "transport",
+    "amountCents": 3270,
+    "note": "Transporte",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772715424443-voonbdp",
+    "createdAt": "2026-03-05T12:57:05.184049+00:00",
+    "date": "2026-03-05",
+    "userId": "marcos",
+    "categoryId": "market",
+    "amountCents": 115,
+    "note": "Arroz (día)",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772731768345-1zetx80",
+    "createdAt": "2026-03-05T17:29:28.968217+00:00",
+    "date": "2026-03-05",
+    "userId": "camila",
+    "categoryId": "cat-1772480047750-gjeu3ww",
+    "amountCents": 8294,
+    "note": "Skincare y haircare",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772727856490-1bpl8e2",
+    "createdAt": "2026-03-05T16:24:17.119861+00:00",
+    "date": "2026-03-05",
+    "userId": "pareja",
+    "categoryId": "market",
+    "amountCents": 850,
+    "note": "Pagar a Camila Tuppers de Vidrio",
+    "isShared": false,
+    "paidBy": "camila"
+  },
+  {
+    "id": "tx-1772572929073-un83qls",
+    "createdAt": "2026-03-03T21:22:09.536855+00:00",
+    "date": "2026-03-03",
+    "userId": "camila",
+    "categoryId": "subscriptions",
+    "amountCents": 1800,
+    "note": "Chatgpt",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772572987889-87fbfjc",
+    "createdAt": "2026-03-03T21:23:08.264224+00:00",
+    "date": "2026-03-03",
+    "userId": "camila",
+    "categoryId": "cat-1772572772755-eufvt5h",
+    "amountCents": 12900,
+    "note": "Dans",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772573074422-21awtan",
+    "createdAt": "2026-03-03T21:24:34.949498+00:00",
+    "date": "2026-03-03",
+    "userId": "camila",
+    "categoryId": "cat-1772480047750-gjeu3ww",
+    "amountCents": 15000,
+    "note": "Retreat La Sierra Shapers",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772572460360-ue06dt7",
+    "createdAt": "2026-03-03T21:14:21.688133+00:00",
+    "date": "2026-03-03",
+    "userId": "camila",
+    "categoryId": "cat-1772572418399-69l9hn2",
+    "amountCents": 31700,
+    "note": "Pasajes (ya pagado por ambos)",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772462930165-668mguo",
+    "createdAt": "2026-03-02T14:48:50.807824+00:00",
+    "date": "2026-03-02",
+    "userId": "marcos",
+    "categoryId": "cat-1772480047750-gjeu3ww",
+    "amountCents": 685,
+    "note": "Respibien",
+    "isShared": false
+  },
+  {
+    "id": "seed:2026-03:pareja:rent",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-02",
+    "userId": "pareja",
+    "categoryId": "rent",
+    "amountCents": 115000,
+    "note": "Alquiler",
+    "isShared": true
+  },
+  {
+    "id": "seed:2026-03:camila:salary",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-02",
+    "userId": "camila",
+    "categoryId": "salary",
+    "amountCents": 250000,
+    "note": "Sueldo",
+    "isShared": false
+  },
+  {
+    "id": "seed:2026-03:marcos:salary",
+    "createdAt": "2026-03-01T12:50:48.775948+00:00",
+    "date": "2026-03-02",
+    "userId": "marcos",
+    "categoryId": "salary",
+    "amountCents": 149400,
+    "note": "Sueldo",
+    "isShared": false
+  },
+  {
+    "id": "tx-1772371701745-62szygf",
+    "createdAt": "2026-03-01T13:28:23.460521+00:00",
+    "date": "2026-03-01",
+    "userId": "pareja",
+    "categoryId": "outing",
+    "amountCents": 1080,
+    "note": "(Falta pagar Camila, Bolt)",
+    "isShared": false,
+    "paidBy": "marcos"
+  }
+]

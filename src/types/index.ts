@@ -28,6 +28,7 @@ export type Transaction = {
     note?: string;
     isShared?: boolean;
     paidBy?: "marcos" | "camila"; // Who physically paid — only relevant for pareja transactions
+    isSettled?: boolean; // If true, the debt portion of this transaction is resolved
 };
 
 export type PeriodFilter = "current-month" | "previous-month" | "current-year";

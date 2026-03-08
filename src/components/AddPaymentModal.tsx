@@ -145,33 +145,35 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
                     </div>
                 </div>
 
-                {/* paidBy selector — only shown for pareja transactions */}
-                {isPareja && (
-                    <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-4">
-                        <label className="block text-sm font-semibold text-yellow-400/90 mb-3">
-                            ⚡ ¿Quién pagó físicamente? *
-                        </label>
-                        <p className="text-xs text-slate-400 mb-3">Este campo se usa para calcular quién le debe a quién en la sección de deudas.</p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {(["marcos", "camila"] as const).map((person) => (
-                                <button
-                                    key={person}
-                                    type="button"
-                                    onClick={() => setPaidBy(person)}
-                                    className={`
-                                        px-4 py-3 rounded-xl border transition-all duration-200 font-medium capitalize
-                                        ${paidBy === person
-                                            ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/50"
-                                            : "bg-zinc-800/50 text-zinc-300 border-zinc-700 hover:border-zinc-600"
-                                        }
-                                    `}
-                                >
-                                    {person.charAt(0).toUpperCase() + person.slice(1)}
-                                </button>
-                            ))}
-                        </div>
+                {/* paidBy selector — shown for all transactions to allow 100% debt or shared tracking */}
+                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-4">
+                    <label className="block text-sm font-semibold text-yellow-400/90 mb-3">
+                        ⚡ ¿Quién pagó físicamente? *
+                    </label>
+                    <p className="text-xs text-slate-400 mb-3">
+                        {isPareja
+                            ? "Indica quién pagó para dividir el gasto 50/50."
+                            : "Si lo pagó la otra persona, se registrará como una deuda del 100%."}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {(["marcos", "camila"] as const).map((person) => (
+                            <button
+                                key={person}
+                                type="button"
+                                onClick={() => setPaidBy(person)}
+                                className={`
+                                    px-4 py-3 rounded-xl border transition-all duration-200 font-medium capitalize
+                                    ${paidBy === person
+                                        ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/50"
+                                        : "bg-zinc-800/50 text-zinc-300 border-zinc-700 hover:border-zinc-600"
+                                    }
+                                `}
+                            >
+                                {person.charAt(0).toUpperCase() + person.slice(1)}
+                            </button>
+                        ))}
                     </div>
-                )}
+                </div>
 
                 {/* Category selection */}
                 <div>

@@ -152,13 +152,42 @@ export function calculateTotals(
         //   userId = "pareja" → shared expense → split 50/50 for each person
         //   userId = "marcos" or "camila" → individual expense → 100% that person only
         if (currentUserId) {
+            // Who physically paid the transaction? 
+            // If paying physically, cash outflow occurs.
+            const physicalPayer = tx.paidBy || tx.userId;
+
             if (tx.userId === "pareja") {
-                // Shared: each person bears 50%
-                amount = Math.round(amount / 2);
+                // Shared: each person bears 50% conceptually, but physically you might pay 100%
+                if (physicalPayer === currentUserId) {
+                    // You paid physically (maybe for yourself, maybe 100% shared)
+                    // We only count your conceptual part (50%) as your actual "expense" 
+                    // BUT for "Available Money" purposes, if you paid 100% physically, you have less cash.
+                    // HOWEVER, the standard here seems to be that shared debt is settled at and that
+                    // balance cards should reflect the CONCEPTUAL remaining money.
+                    // Wait, let's stick to the simplest: balance = income - expenses - savings.
+                    // Expenses = conceptual share.
+                    amount = Math.round(amount / 2);
+                } else if (physicalPayer === "pareja") {
+                    // Old data where paidBy wasn't set, assume you paid half
+                    amount = Math.round(amount / 2);
+                } else {
+                    // Someone else paid physically for a shared expense
+                    // You still conceptual owe 50%, so it counts as your "spent" for budget tracking.
+                    amount = Math.round(amount / 2);
+                }
             } else {
-                // Individual: only count if this user paid it
-                if (tx.userId !== currentUserId) {
-                    return; // Skip transactions paid by the other person
+                // Individual: only count if this user paid it physically OR conceptually
+                // If I paid for Camila (100% her expense), my cash goes down.
+                // If Camila paid for me (100% my expense), my cash stays same.
+
+                if (physicalPayer === currentUserId) {
+                    // I paid it physically. 
+                    // If it's my expense (userId === currentUserId), amount = full.
+                    // If it's Camila's expense (userId !== currentUserId), amount = full (because cash left my pocket).
+                    amount = tx.amountCents;
+                } else {
+                    // Someone else paid physically.
+                    return; // Skip: No immediate cash outflow for currentUserId
                 }
             }
         }
@@ -306,11 +335,12 @@ export function getAccumulatedSavings(
     year: number,
     upToMonth: number,
     currentUserId: string | null = null,
-    upToDay: number = 31 // Filtro opcional por día (acumulado semanal)
+    upToDay: number = 31, // Filtro opcional por día (acumulado semanal)
+    debtAdjustments: DebtAdjustment[] = []
 ): number {
-    const relevantTxs = transactions.filter(t => {
-        if (!t.date) return false;
-        const dateStr = t.date.split('T')[0];
+    const filterByDate = (date: string) => {
+        if (!date) return false;
+        const dateStr = date.split('T')[0];
         const [yStr, mStr, dStr] = dateStr.split('-');
         const tYear = parseInt(yStr, 10);
         const tMonth = parseInt(mStr, 10) - 1;
@@ -318,13 +348,25 @@ export function getAccumulatedSavings(
 
         if (tYear !== year) return false;
         if (tMonth < upToMonth) return true;
+        if (tMonth === upToMonth) return tDay <= upToDay;
+        return false;
+    };
+
+    const relevantTxs = transactions.filter(t => {
+        const passDate = filterByDate(t.date);
+        if (!passDate) return false;
+
+        const dateStr = t.date.split('T')[0];
+        const tMonth = parseInt(dateStr.split('-')[1], 10) - 1;
+        const tDay = parseInt(dateStr.split('-')[2], 10);
+
         if (tMonth === upToMonth) {
             const cat = categories.find(c => c.id === t.categoryId);
             // Regla: Ingresos y gastos fijos siempre se cuentan desde el día 1 para el mes actual
             if (cat?.kind === 'income' || cat?.kind === 'fixed') return true;
             return tDay <= upToDay;
         }
-        return false;
+        return true;
     });
 
     const totals = calculateTotals(relevantTxs, categories, currentUserId);
@@ -337,7 +379,24 @@ export function getAccumulatedSavings(
         }
     });
 
-    const leftover = totals.income - totals.fixed - totals.recurring - totals.invested - jointSavings;
+    let adjustmentsTotal = 0;
+    if (currentUserId) {
+        debtAdjustments.forEach(adj => {
+            if (!filterByDate(adj.date)) return;
+
+            if (adj.direction === "marcos_to_camila") {
+                // Camila paga a Marcos (Resta de Camila, suma a Marcos)
+                if (currentUserId === "camila") adjustmentsTotal -= adj.amountCents;
+                if (currentUserId === "marcos") adjustmentsTotal += adj.amountCents;
+            } else if (adj.direction === "camila_to_marcos") {
+                // Nueva deuda / Marcos paga a Camila (Suma a Camila, resta de Marcos)
+                if (currentUserId === "marcos") adjustmentsTotal -= adj.amountCents;
+                if (currentUserId === "camila") adjustmentsTotal += adj.amountCents;
+            }
+        });
+    }
+
+    const leftover = totals.income - totals.fixed - totals.recurring - totals.invested - jointSavings + adjustmentsTotal;
     return Math.max(0, leftover);
 }
 
@@ -514,12 +573,17 @@ export type DebtRow = {
 
 export type DebtSummary = {
     rows: DebtRow[];
-    netCents: number; // positive → Camila owes Marcos; negative → Marcos owes Camila
-    debtor: "camila" | "marcos" | null;
-    debtorOwes: number; // always positive
+    netCents: number; // positive → Camila owes Marcos; negative → Marcos owes Camila (includes all, but we are going to separate it)
+    netSharedCents: number; // ONLY shared expenses (pareja)
+    debtor: "camila" | "marcos" | null; // For the generic summary
+    debtorOwes: number; // For the generic summary
+    sharedDebtor: "camila" | "marcos" | null; // Specifically for the shared expenses banner
+    sharedDebtorOwes: number;
 };
 
 import { DebtAdjustment } from "@/types";
+
+export const BASE_PERSONAL_DEBT_CENTS = 71550; // Camila owes Marcos
 
 export function calculateSharedDebt(
     transactions: Transaction[],
@@ -528,11 +592,21 @@ export function calculateSharedDebt(
     month?: number,
     year?: number
 ): DebtSummary {
-    const sharedTxs = transactions.filter((tx) => {
-        if (tx.userId !== "pareja") return false;
-        if (!tx.paidBy) return false;
+    const allSharedOrDebtTxs = transactions.filter((tx) => {
         const cat = categories.find((c) => c.id === tx.categoryId);
         if (cat?.kind === "income") return false;
+
+        // Condition 1: Shared expense (pareja)
+        const isShared = tx.userId === "pareja";
+
+        // Condition 2: Individual expense paid by the OTHER person (100% debt)
+        const isDebt = tx.paidBy && tx.paidBy !== tx.userId;
+
+        if (!isShared && !isDebt) return false;
+
+        // Skip if already settled
+        if (tx.isSettled) return false;
+
         if (month !== undefined && year !== undefined) {
             const d = new Date(tx.date);
             if (d.getFullYear() !== year || d.getMonth() !== month) return false;
@@ -540,11 +614,32 @@ export function calculateSharedDebt(
         return true;
     });
 
-    const rows: DebtRow[] = sharedTxs.map((tx) => {
+    const rows: DebtRow[] = allSharedOrDebtTxs.map((tx) => {
         const cat = categories.find((c) => c.id === tx.categoryId);
-        const paidBy = tx.paidBy!;
-        const eachShareCents = Math.round(tx.amountCents / 2);
-        const marcosSaldo = paidBy === "marcos" ? eachShareCents : -eachShareCents;
+        const paidBy = tx.paidBy || (tx.userId === "pareja" ? "marcos" : (tx.userId as "marcos" | "camila"));
+
+        let eachShareCents: number;
+        let marcosSaldo: number;
+
+        if (tx.userId === "pareja") {
+            // Shared: 50/50
+            eachShareCents = Math.round(tx.amountCents / 2);
+            marcosSaldo = paidBy === "marcos" ? eachShareCents : -eachShareCents;
+        } else {
+            // 100% Debt: One pays the full amount for the other
+            eachShareCents = tx.amountCents; // The share for the owner is 100%
+            // If Marcos paid for Camila, Camila owes Marcos 100%
+            // If Camila paid for Marcos, Marcos owes Camila 100%
+            if (tx.userId === "camila" && paidBy === "marcos") {
+                marcosSaldo = tx.amountCents; // Positive: Camila owes Marcos
+            } else if (tx.userId === "marcos" && paidBy === "camila") {
+                marcosSaldo = -tx.amountCents; // Negative: Marcos owes Camila
+            } else {
+                // Should not happen with isDebt filter, but for safety:
+                marcosSaldo = 0;
+            }
+        }
+
         return {
             txId: tx.id,
             date: tx.date,
@@ -559,6 +654,9 @@ export function calculateSharedDebt(
     });
 
     let netCents = rows.reduce((acc, r) => acc + r.marcosSaldo, 0);
+    // netSharedCents is the monthly net balance, INCLUDING 100% monthly debts but EXCLUDING global historical debt
+    let netSharedCents = netCents;
+
 
     for (const adj of adjustments) {
         if (month !== undefined && year !== undefined) {
@@ -570,6 +668,8 @@ export function calculateSharedDebt(
         } else {
             netCents += adj.amountCents;
         }
+        // Notice we do NOT apply adjustments to netSharedCents because adjustments
+        // are for the global personal debt historical balance.
     }
 
     let debtor: "camila" | "marcos" | null = null;
@@ -577,5 +677,11 @@ export function calculateSharedDebt(
     if (netCents > 0) { debtor = "camila"; debtorOwes = netCents; }
     else if (netCents < 0) { debtor = "marcos"; debtorOwes = Math.abs(netCents); }
 
-    return { rows, netCents, debtor, debtorOwes };
+    let sharedDebtor: "camila" | "marcos" | null = null;
+    let sharedDebtorOwes = 0;
+    if (netSharedCents > 0) { sharedDebtor = "camila"; sharedDebtorOwes = netSharedCents; }
+    else if (netSharedCents < 0) { sharedDebtor = "marcos"; sharedDebtorOwes = Math.abs(netSharedCents); }
+
+
+    return { rows, netCents, netSharedCents, debtor, debtorOwes, sharedDebtor, sharedDebtorOwes };
 }

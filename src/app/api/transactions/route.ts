@@ -14,6 +14,7 @@ function mapToTransaction(row: Record<string, unknown>): Transaction {
         note: (row.note as string) ?? undefined,
         isShared: (row.is_shared as boolean) ?? false,
         paidBy: (row.paid_by as "marcos" | "camila") ?? undefined,
+        isSettled: (row.is_settled as boolean) ?? false,
     };
 }
 
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
             note: body.note ?? null,
             is_shared: body.isShared ?? false,
             paid_by: body.paidBy ?? null,
+            is_settled: body.isSettled ?? false,
         })
         .select()
         .single();

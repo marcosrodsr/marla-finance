@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { Transaction, User, Category } from "@/types";
+import { Transaction, User, Category, DebtAdjustment } from "@/types";
 import { USERS } from "@/lib/mock";
 
 type FinanceStore = {
@@ -10,10 +10,14 @@ type FinanceStore = {
     transactions: Transaction[];
     loading: boolean;
     error: string | null;
+    debtAdjustments: DebtAdjustment[];
     addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => Promise<void>;
     updateTransaction: (id: string, tx: Omit<Transaction, "id" | "createdAt">) => Promise<void>;
     deleteTransaction: (id: string) => Promise<void>;
     addCategory: (cat: Omit<Category, "id">) => Promise<void>;
+    addDebtAdjustment: (adj: Omit<DebtAdjustment, "id" | "createdAt">) => Promise<void>;
+    updateDebtAdjustment: (id: string, adj: Omit<DebtAdjustment, "id" | "createdAt">) => Promise<void>;
+    deleteDebtAdjustment: (id: string) => Promise<void>;
     refresh: () => Promise<void>;
 };
 
@@ -22,6 +26,7 @@ const FinanceContext = createContext<FinanceStore | null>(null);
 export function FinanceProvider({ children }: { children: ReactNode }) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [debtAdjustments, setDebtAdjustments] = useState<DebtAdjustment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -29,17 +34,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         setError(null);
         try {
-            const [txRes, catRes] = await Promise.all([
+            const [txRes, catRes, adjRes] = await Promise.all([
                 fetch("/api/transactions"),
                 fetch("/api/categories"),
+                fetch("/api/debt-adjustments"),
             ]);
 
             if (!txRes.ok) throw new Error(`Transactions fetch failed: ${txRes.statusText}`);
             if (!catRes.ok) throw new Error(`Categories fetch failed: ${catRes.statusText}`);
+            if (!adjRes.ok) throw new Error(`Debt adjustments fetch failed: ${adjRes.statusText}`);
 
-            const [txData, catData] = await Promise.all([txRes.json(), catRes.json()]);
+            const [txData, catData, adjData] = await Promise.all([txRes.json(), catRes.json(), adjRes.json()]);
             setTransactions(txData as Transaction[]);
             setCategories(catData as Category[]);
+            setDebtAdjustments(adjData as DebtAdjustment[]);
         } catch (err) {
             const msg = err instanceof Error ? err.message : "Unknown error";
             setError(msg);
@@ -147,16 +155,79 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const addDebtAdjustment = async (adj: Omit<DebtAdjustment, "id" | "createdAt">) => {
+        const newAdj: DebtAdjustment = {
+            ...adj,
+            id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            createdAt: new Date().toISOString(),
+        };
+
+        setDebtAdjustments((prev) => [newAdj, ...prev]);
+
+        const res = await fetch("/api/debt-adjustments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newAdj),
+        });
+
+        if (!res.ok) {
+            setDebtAdjustments((prev) => prev.filter((a) => a.id !== newAdj.id));
+            const data = await res.json() as { error?: string };
+            setError(`Error al guardar ajuste: ${data.error ?? res.statusText}`);
+        } else {
+            const saved = await res.json() as DebtAdjustment;
+            setDebtAdjustments((prev) => prev.map((a) => (a.id === newAdj.id ? saved : a)));
+        }
+    };
+
+    const updateDebtAdjustment = async (id: string, adj: Omit<DebtAdjustment, "id" | "createdAt">) => {
+        setDebtAdjustments((prev) =>
+            prev.map((a) => (a.id === id ? { ...a, ...adj } : a))
+        );
+
+        const res = await fetch(`/api/debt-adjustments/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(adj),
+        });
+
+        if (!res.ok) {
+            const data = await res.json() as { error?: string };
+            setError(`Error al actualizar ajuste: ${data.error ?? res.statusText}`);
+            await fetchAll();
+        } else {
+            const updated = await res.json() as DebtAdjustment;
+            setDebtAdjustments((prev) => prev.map((a) => (a.id === id ? updated : a)));
+        }
+    };
+
+    const deleteDebtAdjustment = async (id: string) => {
+        const prev = debtAdjustments;
+        setDebtAdjustments((p) => p.filter((a) => a.id !== id));
+
+        const res = await fetch(`/api/debt-adjustments/${id}`, { method: "DELETE" });
+
+        if (!res.ok) {
+            setDebtAdjustments(prev);
+            const data = await res.json() as { error?: string };
+            setError(`Error al eliminar ajuste: ${data.error ?? res.statusText}`);
+        }
+    };
+
     const value: FinanceStore = {
         users: USERS,
         categories,
         transactions,
+        debtAdjustments,
         loading,
         error,
         addTransaction,
         updateTransaction,
         deleteTransaction,
         addCategory,
+        addDebtAdjustment,
+        updateDebtAdjustment,
+        deleteDebtAdjustment,
         refresh: fetchAll,
     };
 

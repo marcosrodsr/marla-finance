@@ -19,6 +19,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
             note: body.note ?? null,
             is_shared: body.isShared ?? false,
             paid_by: body.paidBy ?? null,
+            is_settled: body.isSettled ?? false,
         })
         .eq("id", id)
         .select()
@@ -39,6 +40,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         note: (row.note as string) ?? undefined,
         isShared: (row.is_shared as boolean) ?? false,
         paidBy: (row.paid_by as "marcos" | "camila") ?? undefined,
+        isSettled: (row.is_settled as boolean) ?? false,
     };
 
     return NextResponse.json(tx);

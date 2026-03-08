@@ -52,6 +52,7 @@ model Transaction {
   amountCents Int
   note        String?
   shared      Boolean  @default(false)
+  isSettled   Boolean  @default(false)
 
   ownerUserId String
   owner       User     @relation("OwnerTxs", fields: [ownerUserId], references: [id], onDelete: Cascade)
