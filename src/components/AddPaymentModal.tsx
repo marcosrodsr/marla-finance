@@ -49,23 +49,32 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
         }
     }, [initialData, isOpen]);
 
-    // Reset paidBy when userId changes away from pareja
-    useEffect(() => {
-        if (userId !== "pareja") {
-            setPaidBy(null);
-        }
-    }, [userId]);
+
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
-        if (!userId) {
-            setError("Selecciona quién paga");
+        let finalUserId = userId;
+        let finalPaidBy = paidBy;
+
+        // v4 Smart Inference
+        if (!finalUserId && finalPaidBy) {
+            // Only Payer selected -> It's a 100% debt from the OTHER person
+            finalUserId = finalPaidBy === "marcos" ? "camila" : "marcos";
+        } else if (finalUserId && !finalPaidBy) {
+            // Only Owner selected -> It's a personal/joint expense
+            if (finalUserId !== "pareja") {
+                finalPaidBy = finalUserId as "marcos" | "camila";
+            }
+        }
+
+        if (!finalUserId) {
+            setError("Selecciona quién es responsable del gasto");
             return;
         }
 
-        if (userId === "pareja" && !paidBy) {
+        if (finalUserId === "pareja" && !finalPaidBy) {
             setError("Indica quién pagó físicamente este gasto compartido");
             return;
         }
@@ -87,13 +96,13 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
         }
 
         const txData = {
-            userId,
+            userId: finalUserId,
             categoryId,
             amountCents,
             date,
             note: note.trim() || undefined,
             isShared: initialData?.isShared,
-            paidBy: userId === "pareja" ? paidBy ?? undefined : undefined,
+            paidBy: finalPaidBy ?? undefined,
         };
 
         if (initialData && initialData.id) {
@@ -130,7 +139,7 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
                             <button
                                 key={user.id}
                                 type="button"
-                                onClick={() => setUserId(user.id)}
+                                onClick={() => setUserId(userId === user.id ? null : user.id)}
                                 className={`
                   px-4 py-3 rounded-xl border transition-all duration-200 font-medium
                   ${userId === user.id
@@ -160,7 +169,7 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
                             <button
                                 key={person}
                                 type="button"
-                                onClick={() => setPaidBy(person)}
+                                onClick={() => setPaidBy(paidBy === person ? null : person)}
                                 className={`
                                     px-4 py-3 rounded-xl border transition-all duration-200 font-medium capitalize
                                     ${paidBy === person

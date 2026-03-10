@@ -405,6 +405,8 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 initialData={editingTx}
             />
 
+
+
             {showCalendar && (
                 <TransactionCalendar
                     transactions={userTransactions}

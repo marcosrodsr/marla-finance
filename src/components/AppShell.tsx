@@ -20,7 +20,8 @@ export default function AppShell({ children }: AppShellProps) {
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     const pathname = usePathname();
-    const showFAB = pathname === "/dashboard" || pathname === "/marcos" || pathname === "/camila" || pathname === "/transactions";
+    const showFAB = pathname === "/dashboard" || pathname === "/marcos" || pathname === "/camila" || pathname === "/transactions" || pathname === "/estadisticas";
+
 
     return (
         <>
@@ -90,7 +91,11 @@ export default function AppShell({ children }: AppShellProps) {
                 </button>
             )}
 
-            <AddPaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
+            <AddPaymentModal 
+                isOpen={isPaymentModalOpen} 
+                onClose={() => setIsPaymentModalOpen(false)} 
+            />
+
             <AddCategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} />
         </>
     );

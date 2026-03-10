@@ -16,6 +16,15 @@ function DebtIcon() {
     );
 }
 
+function StatsIcon() {
+    return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+        </svg>
+    );
+}
+
 // Redefining simpler versions for mobile
 // Redefining simpler versions for mobile - Letter Badges
 function MobileMarcosBadge() {
@@ -38,8 +47,8 @@ const navItems = [
     { href: "/dashboard", icon: HomeIcon, label: "Home", isBadge: false },
     { href: "/marcos", icon: MobileMarcosBadge, label: "Marcos", isBadge: true },
     { href: "/camila", icon: MobileCamilaBadge, label: "Camila", isBadge: true },
-    { href: "/transactions", icon: ListIcon, label: "Movs", isBadge: false },
     { href: "/deudas", icon: DebtIcon, label: "Deudas", isBadge: false },
+    { href: "/estadisticas", icon: StatsIcon, label: "Stats", isBadge: false },
 ];
 
 export default function BottomNav() {
