@@ -12,14 +12,24 @@ type TopBarProps = {
 
 export default function TopBar({ onAddPayment, onAddCategory }: TopBarProps) {
     const pathname = usePathname();
-    const showActions = pathname === "/dashboard" || pathname === "/marcos" || pathname === "/camila" || pathname === "/transactions" || pathname === "/movimientos";
+    const showActions = [
+        "/dashboard",
+        "/marcos",
+        "/camila",
+        "/transactions",
+        "/movimientos",
+        "/deudas",
+        "/estadisticas"
+    ].includes(pathname);
 
     // Title map
     const getTitle = () => {
         if (pathname === "/dashboard") return "General";
         if (pathname === "/marcos") return "Marcos";
         if (pathname === "/camila") return "Camila";
-        if (pathname === "/transactions") return "Movimientos";
+        if (pathname === "/transactions" || pathname === "/movimientos") return "Movimientos";
+        if (pathname === "/deudas") return "Deudas";
+        if (pathname === "/estadisticas") return "Estadísticas";
         if (pathname === "/settings") return "Ajustes";
         return "";
     }
@@ -38,10 +48,10 @@ export default function TopBar({ onAddPayment, onAddCategory }: TopBarProps) {
                         {onAddCategory && (
                             <button
                                 onClick={onAddCategory}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-400 font-medium text-xs hover:bg-blue-500/20 active:scale-95 transition-all"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold text-[11px] hover:bg-blue-500/20 active:scale-95 transition-all shadow-sm shadow-blue-500/5"
                             >
                                 <PlusIcon className="w-3.5 h-3.5" />
-                                <span>Campo</span>
+                                <span>Categoría</span>
                             </button>
                         )}
                     </div>
