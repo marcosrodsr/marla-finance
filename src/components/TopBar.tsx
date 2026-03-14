@@ -45,15 +45,7 @@ export default function TopBar({ onAddPayment, onAddCategory }: TopBarProps) {
 
                 {showActions && (
                     <div className="flex items-center gap-2">
-                        {onAddCategory && (
-                            <button
-                                onClick={onAddCategory}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold text-[11px] hover:bg-blue-500/20 active:scale-95 transition-all shadow-sm shadow-blue-500/5"
-                            >
-                                <PlusIcon className="w-3.5 h-3.5" />
-                                <span>Categoría</span>
-                            </button>
-                        )}
+                        {/* Global actions moved to local selectors for better contextual accessibility */}
                     </div>
                 )}
             </div>

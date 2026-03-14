@@ -11,6 +11,8 @@ type FinanceStore = {
     loading: boolean;
     error: string | null;
     debtAdjustments: DebtAdjustment[];
+    isCategoryModalOpen: boolean;
+    setCategoryModalOpen: (open: boolean) => void;
     addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => Promise<void>;
     updateTransaction: (id: string, tx: Omit<Transaction, "id" | "createdAt">) => Promise<void>;
     deleteTransaction: (id: string) => Promise<void>;
@@ -29,6 +31,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [debtAdjustments, setDebtAdjustments] = useState<DebtAdjustment[]>([]);
+    const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -272,6 +275,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateDebtAdjustment,
         deleteDebtAdjustment,
         refresh: fetchAll,
+        isCategoryModalOpen,
+        setCategoryModalOpen,
     };
 
     return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

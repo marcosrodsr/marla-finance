@@ -7,6 +7,7 @@ import SideNav from "./SideNav";
 import BottomNav from "./BottomNav";
 import AddPaymentModal from "./AddPaymentModal";
 import AddCategoryModal from "./AddCategoryModal";
+import { useFinance } from "@/store/finance-store";
 import PlusIcon from "./icons/PlusIcon";
 import Button from "./Button";
 import UpdateBanner from "./UpdateBanner";
@@ -16,8 +17,8 @@ type AppShellProps = {
 };
 
 export default function AppShell({ children }: AppShellProps) {
+    const { isCategoryModalOpen, setCategoryModalOpen } = useFinance();
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     const pathname = usePathname();
     const showFAB = pathname === "/dashboard" || pathname === "/marcos" || pathname === "/camila" || pathname === "/transactions" || pathname === "/estadisticas";
@@ -51,7 +52,7 @@ export default function AppShell({ children }: AppShellProps) {
                         <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => setIsCategoryModalOpen(true)}
+                            onClick={() => setCategoryModalOpen(true)}
                             className="gap-2"
                         >
                             <PlusIcon className="w-4 h-4" />
@@ -67,7 +68,7 @@ export default function AppShell({ children }: AppShellProps) {
                     </div>
                 </header>
 
-                <TopBar onAddCategory={() => setIsCategoryModalOpen(true)} /> {/* Mobile only */}
+                <TopBar onAddCategory={() => setCategoryModalOpen(true)} /> {/* Mobile only */}
 
                 <SideNav />
 
@@ -96,7 +97,7 @@ export default function AppShell({ children }: AppShellProps) {
                 onClose={() => setIsPaymentModalOpen(false)} 
             />
 
-            <AddCategoryModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} />
+            <AddCategoryModal isOpen={isCategoryModalOpen} onClose={() => setCategoryModalOpen(false)} />
         </>
     );
 }

@@ -1,7 +1,8 @@
 "use client";
-
 import { useState } from "react";
 import { ViewMode, MonthYear } from "@/types";
+import { useFinance } from "@/store/finance-store";
+import PlusIcon from "./icons/PlusIcon";
 
 type MonthYearSelectorProps = {
     viewMode: ViewMode;
@@ -21,6 +22,7 @@ export default function MonthYearSelector({
     selectedDate,
     setSelectedDate,
 }: MonthYearSelectorProps) {
+    const { setCategoryModalOpen } = useFinance();
     const [isOpen, setIsOpen] = useState(false);
 
     // Generate available years (current and previous)
@@ -59,6 +61,16 @@ export default function MonthYearSelector({
                     Anual
                 </button>
             </div>
+
+            {/* Quick Add Category Button - Next to toggle */}
+            <button
+                onClick={() => setCategoryModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold text-[11px] hover:bg-blue-500/20 active:scale-95 transition-all shadow-sm shadow-blue-500/5 group"
+                title="Nueva Categoría"
+            >
+                <PlusIcon className="w-3.5 h-3.5 transition-transform group-hover:rotate-90" />
+                <span className="hidden xs:inline">Categoría</span>
+            </button>
 
             <div className="w-[1px] h-6 bg-white/10 hidden sm:block mx-1"></div>
 
