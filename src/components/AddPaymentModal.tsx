@@ -5,8 +5,8 @@ import Modal from "./Modal";
 import Button from "./Button";
 import ChipSelect from "./ChipSelect";
 import { useFinance } from "@/store/finance-store";
-import { parseToAmountCents, formatEur } from "@/lib/finance";
-import { Transaction } from "@/types";
+import { parseToAmountCents } from "@/lib/finance";
+import { Category, Transaction } from "@/types";
 
 type AddPaymentModalProps = {
     isOpen: boolean;
@@ -15,7 +15,9 @@ type AddPaymentModalProps = {
 };
 
 export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPaymentModalProps) {
-    const { users, categories, addTransaction, updateTransaction } = useFinance();
+    const { users, categories, addTransaction, updateTransaction, updateCategory, deleteCategory } = useFinance();
+
+    const [isEditMode, setIsEditMode] = useState(false);
 
     const [userId, setUserId] = useState<string | null>(null);
     const [paidBy, setPaidBy] = useState<"marcos" | "camila" | null>(null);
@@ -116,6 +118,7 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
 
     const handleClose = () => {
         setError("");
+        setIsEditMode(false);
         if (!initialData) {
             setAmount("");
             setNote("");
@@ -123,8 +126,29 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
         onClose();
     };
 
+    const handleReorderCategories = (reordered: Category[]) => {
+        // Find which categories changed their index and update them
+        reordered.forEach((cat, index) => {
+            if (cat.order !== index) {
+                updateCategory(cat.id, { order: index });
+            }
+        });
+    };
+
+    const handleArchiveCategory = (id: string) => {
+        if (confirm("¿Seguro que quieres eliminar esta categoría del listado? Los pagos históricos se mantendrán intactos.")) {
+            deleteCategory(id);
+            if (categoryId === id) setCategoryId(null); // Clear selection if active
+        }
+    };
+
     const isEdit = !!initialData?.id;
     const isPareja = userId === "pareja";
+    
+    // Sort and filter active categories
+    const activeCategories = categories
+        .filter(c => c.isActive !== false)
+        .sort((a,b) => (a.order ?? 0) - (b.order ?? 0));
 
     return (
         <Modal isOpen={isOpen} onClose={handleClose} title={isEdit ? "Editar pago" : "Agregar pago"}>
@@ -186,13 +210,29 @@ export default function AddPaymentModal({ isOpen, onClose, initialData }: AddPay
 
                 {/* Category selection */}
                 <div>
-                    <label className="block text-sm font-medium text-zinc-300 mb-2">
-                        Tipo de pago *
-                    </label>
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-medium text-zinc-300">
+                            Tipo de pago *
+                        </label>
+                        <button 
+                            type="button" 
+                            onClick={() => setIsEditMode(!isEditMode)} 
+                            className={`text-xs px-2 py-1 rounded-md transition-colors ${
+                                isEditMode 
+                                    ? "bg-blue-600/20 text-blue-400 font-bold" 
+                                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                            }`}
+                        >
+                            {isEditMode ? "✓ Hecho" : "Editar categorías"}
+                        </button>
+                    </div>
                     <ChipSelect
-                        options={categories}
+                        options={activeCategories}
                         selected={categoryId}
                         onSelect={setCategoryId}
+                        isEditMode={isEditMode}
+                        onReorder={handleReorderCategories}
+                        onArchive={handleArchiveCategory}
                     />
                 </div>
 

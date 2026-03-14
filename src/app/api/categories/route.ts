@@ -10,6 +10,8 @@ function mapToCategory(row: Record<string, unknown>): Category {
         kind: row.kind as Category["kind"],
         scope: row.scope as Category["scope"],
         limitMonthly: (row.limit_monthly as number) ?? undefined,
+        order: (row.order as number) ?? 0,
+        isActive: (row.is_active as boolean) ?? true,
     };
 }
 
@@ -18,6 +20,7 @@ export async function GET() {
     const { data, error } = await supabase
         .from("categories")
         .select("*")
+        .order("order", { ascending: true })
         .order("label");
 
     if (error) {
@@ -40,6 +43,8 @@ export async function POST(req: NextRequest) {
             kind: body.kind,
             scope: body.scope,
             limit_monthly: body.limitMonthly ?? null,
+            order: body.order ?? 0,
+            is_active: body.isActive ?? true,
         })
         .select()
         .single();

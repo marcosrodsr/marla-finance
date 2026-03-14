@@ -19,7 +19,40 @@ const KINDS: { value: CategoryKind; label: string }[] = [
     { value: "income", label: "Ingreso" },
 ];
 
-const EMOJIS = ["🏠", "💡", "🚗", "🛒", "💊", "🎉", "✈️", "🍔", "🎓", "🎁", "🐶", "🏥", "💻", "📱", "🔧", "💵", "🏦", "📈", "🏖️", "🏋️"];
+const EMOJI_GROUPS = [
+    {
+        name: "Hogar",
+        emojis: ["🏠", "🛋️", "🧹", "🧼", "🧺", "🚽", "🛏️", "🚪", "🚿", "🔑"]
+    },
+    {
+        name: "Comida",
+        emojis: ["🛒", "🍔", "🌮", "🍕", "🥗", "🍎", "🥦", "🥪", "🍷", "☕", "🍺", "🍽️"]
+    },
+    {
+        name: "Transporte",
+        emojis: ["🚗", "🚌", "🚆", "✈️", "⛽", "🛵", "🚲", "🚕", "🛥️", "🎟️", "🚄"]
+    },
+    {
+        name: "Salud & Personal",
+        emojis: ["🏥", "💊", "🩺", "🧴", "💄", "💇‍♀️", "🧘‍♀️", "🏋️‍♂️", "🏃‍♂️", "🦷", "👓", "👕", "👟"]
+    },
+    {
+        name: "Ocio",
+        emojis: ["🎉", "🎬", "🎮", "📚", "🎓", "🎸", "⛺", "🏖️", "🎫", "🧩", "🎨", "⚽"]
+    },
+    {
+        name: "Finanzas y Servicios",
+        emojis: ["💡", "💧", "🔌", "📱", "💻", "🏦", "💰", "📈", "📉", "💸", "💳", "🧾"]
+    },
+    {
+        name: "Mascotas",
+        emojis: ["🐶", "🐱", "🐰", "🐹", "🐾", "🦴", "🦜"]
+    },
+    {
+        name: "Otros",
+        emojis: ["🎁", "🛍️", "📦", "🔧", "🔨", "📎", "✂️", "🗑️", "✨", "🔥"]
+    }
+];
 
 export default function AddCategoryModal({ isOpen, onClose }: AddCategoryModalProps) {
     const { addCategory } = useFinance();
@@ -27,6 +60,7 @@ export default function AddCategoryModal({ isOpen, onClose }: AddCategoryModalPr
     const [label, setLabel] = useState("");
     const [kind, setKind] = useState<CategoryKind>("variable");
     const [icon, setIcon] = useState("🛒");
+    const [activeEmojiGroup, setActiveEmojiGroup] = useState(EMOJI_GROUPS[0].name);
     const [error, setError] = useState("");
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -99,23 +133,47 @@ export default function AddCategoryModal({ isOpen, onClose }: AddCategoryModalPr
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
                         Icono
                     </label>
-                    <div className="grid grid-cols-5 gap-2">
-                        {EMOJIS.map((e) => (
-                            <button
-                                key={e}
-                                type="button"
-                                onClick={() => setIcon(e)}
-                                className={`
-                  h-10 rounded-lg text-xl flex items-center justify-center transition-all
-                  ${icon === e
-                                        ? "bg-blue-600/20 border border-blue-500/50"
-                                        : "bg-zinc-800/30 hover:bg-zinc-800"
-                                    }
-                `}
-                            >
-                                {e}
-                            </button>
-                        ))}
+                    <div className="bg-zinc-800/30 rounded-xl overflow-hidden border border-zinc-700/50">
+                        {/* Tabs */}
+                        <div className="flex overflow-x-auto custom-scrollbar border-b border-zinc-700/50">
+                            {EMOJI_GROUPS.map((group) => (
+                                <button
+                                    key={group.name}
+                                    type="button"
+                                    onClick={() => setActiveEmojiGroup(group.name)}
+                                    className={`
+                                        whitespace-nowrap px-4 py-2.5 text-xs font-medium transition-colors border-b-2
+                                        ${activeEmojiGroup === group.name
+                                            ? "text-blue-400 border-blue-500 bg-blue-500/5"
+                                            : "text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-800/50"
+                                        }
+                                    `}
+                                >
+                                    {group.name}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Grid */}
+                        <div className="p-3">
+                            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                                {EMOJI_GROUPS.find(g => g.name === activeEmojiGroup)?.emojis.map((e) => (
+                                    <button
+                                        key={e}
+                                        type="button"
+                                        onClick={() => setIcon(e)}
+                                        className={`
+                                            h-10 w-full rounded-lg text-xl flex items-center justify-center transition-all
+                                            ${icon === e
+                                                ? "bg-blue-600/20 border border-blue-500/50 scale-110 shadow-sm"
+                                                : "bg-zinc-800/50 hover:bg-zinc-700 hover:scale-105 border border-transparent"
+                                            }
+                                        `}
+                                    >
+                                        {e}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 

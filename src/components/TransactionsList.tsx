@@ -1,5 +1,5 @@
 import { Transaction, Category, User } from "@/types";
-import { formatEur, formatDate } from "@/lib/finance";
+import { formatEur, formatDate, normalizeText } from "@/lib/finance";
 import { useState } from "react";
 import { useFinance } from "@/store/finance-store";
 
@@ -8,6 +8,7 @@ type TransactionsListProps = {
     categories: Category[];
     users: User[];
     limit?: number;
+    searchTerm?: string;
     onEdit?: (tx: Transaction) => void;
     contextUserId?: string | null;
 };
@@ -17,13 +18,34 @@ export default function TransactionsList({
     categories,
     users,
     limit,
+    searchTerm,
     onEdit,
     contextUserId
 }: TransactionsListProps) {
     const { deleteTransaction } = useFinance();
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+    
+    // Filtering logic
+    const filtered = transactions.filter((tx) => {
+        if (!searchTerm) return true;
 
-    const displayed = limit ? transactions.slice(0, limit) : transactions;
+        const category = categories.find((c) => c.id === tx.categoryId);
+        const normalizedSearch = normalizeText(searchTerm);
+
+        // Match Category Label
+        const categoryMatch = category && normalizeText(category.label).includes(normalizedSearch);
+
+        // Match Note
+        const noteMatch = tx.note && normalizeText(tx.note).includes(normalizedSearch);
+
+        // Match Date (as displayed)
+        const displayDate = formatDate(tx.date);
+        const dateMatch = normalizeText(displayDate).includes(normalizedSearch);
+
+        return categoryMatch || noteMatch || dateMatch;
+    });
+
+    const displayed = limit ? filtered.slice(0, limit) : filtered;
 
     if (displayed.length === 0) {
         return (

@@ -14,6 +14,7 @@ import TransactionsList from "@/components/TransactionsList";
 import MonthYearSelector from "@/components/MonthYearSelector";
 import AddPaymentModal from "@/components/AddPaymentModal";
 import TransactionCalendar from "@/components/TransactionCalendar";
+import SearchInput from "@/components/SearchInput";
 
 export default function TransactionsPage() {
     const { transactions, categories, users } = useFinance();
@@ -29,6 +30,7 @@ export default function TransactionsPage() {
     const [categoryId, setCategoryId] = useState<string | null>(null);
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
     const [showCalendar, setShowCalendar] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Filtering logic remains identical
     let filtered = viewMode === "monthly"
@@ -134,6 +136,11 @@ export default function TransactionsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Search Input */}
+                <div className="w-full lg:w-80">
+                    <SearchInput value={searchTerm} onChange={setSearchTerm} />
+                </div>
             </div>
 
             {/* Results Table/List */}
@@ -162,6 +169,7 @@ export default function TransactionsPage() {
                     transactions={filtered}
                     categories={categories}
                     users={users}
+                    searchTerm={searchTerm}
                     onEdit={setEditingTx}
                 />
             </Card>

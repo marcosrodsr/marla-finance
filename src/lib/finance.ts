@@ -1,5 +1,15 @@
 import { Transaction, Category, CategoryKind, PeriodFilter } from "@/types";
 
+/**
+ * Normalizes text for search: lowercase and removal of diacritics (accents).
+ */
+export function normalizeText(text: string): string {
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
 // Format cents to EUR string
 export function formatEur(cents: number): string {
     const euros = cents / 100;

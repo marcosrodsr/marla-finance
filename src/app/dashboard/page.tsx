@@ -28,6 +28,7 @@ import AddPaymentModal from "@/components/AddPaymentModal";
 import TransactionCalendar from "@/components/TransactionCalendar";
 import CategoryDetailsModal from "@/components/CategoryDetailsModal";
 import { Category } from "@/types";
+import SearchInput from "@/components/SearchInput";
 
 export default function DashboardPage() {
     const { transactions, categories, users, loading, error } = useFinance();
@@ -40,6 +41,7 @@ export default function DashboardPage() {
 
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
     const [showCalendar, setShowCalendar] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     // Manage Selected Week for the Whole Dashboard
     const weeks = useMemo(() => getWeeksOfMonth(date.year, date.month), [date.year, date.month]);
@@ -235,17 +237,25 @@ export default function DashboardPage() {
                 <Card>
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-slate-200">Últimos movimientos</h3>
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setShowCalendar(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/60 border border-white/5 text-slate-400 hover:text-white hover:border-white/15 hover:bg-slate-700/60 transition-all"
-                            >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                Calendario
-                            </button>
-                            <span className="text-xs text-slate-500 uppercase tracking-widest font-bold">Este mes</span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <SearchInput
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                                className="w-full sm:w-64"
+                                placeholder="Filtrar..."
+                            />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setShowCalendar(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/60 border border-white/5 text-slate-400 hover:text-white hover:border-white/15 hover:bg-slate-700/60 transition-all"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Calendario
+                                </button>
+                                <span className="text-xs text-slate-500 uppercase tracking-widest font-bold">Este mes</span>
+                            </div>
                         </div>
                     </div>
                     <TransactionsList
@@ -253,6 +263,7 @@ export default function DashboardPage() {
                         categories={categories}
                         users={users}
                         limit={8}
+                        searchTerm={searchTerm}
                         onEdit={setEditingTx}
                     />
                 </Card>

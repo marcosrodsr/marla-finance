@@ -16,6 +16,8 @@ export type Category = {
     kind: CategoryKind;
     scope: CategoryScope;
     limitMonthly?: number;
+    order?: number;
+    isActive?: boolean;
 };
 
 export type Transaction = {

@@ -67,7 +67,7 @@ export default function AppShell({ children }: AppShellProps) {
                     </div>
                 </header>
 
-                <TopBar /> {/* Mobile only */}
+                <TopBar onAddCategory={() => setIsCategoryModalOpen(true)} /> {/* Mobile only */}
 
                 <SideNav />
 

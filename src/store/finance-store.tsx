@@ -15,6 +15,8 @@ type FinanceStore = {
     updateTransaction: (id: string, tx: Omit<Transaction, "id" | "createdAt">) => Promise<void>;
     deleteTransaction: (id: string) => Promise<void>;
     addCategory: (cat: Omit<Category, "id">) => Promise<void>;
+    updateCategory: (id: string, cat: Partial<Category>) => Promise<void>;
+    deleteCategory: (id: string) => Promise<void>;
     addDebtAdjustment: (adj: Omit<DebtAdjustment, "id" | "createdAt">) => Promise<void>;
     updateDebtAdjustment: (id: string, adj: Omit<DebtAdjustment, "id" | "createdAt">) => Promise<void>;
     deleteDebtAdjustment: (id: string) => Promise<void>;
@@ -151,7 +153,46 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             setError(`Error al guardar categoría: ${data.error ?? res.statusText}`);
         } else {
             const saved = await res.json() as Category;
-            setCategories((prev) => prev.map((c) => (c.id === newCat.id ? saved : c)));
+            setCategories((prev) => {
+                const updated = prev.map((c) => (c.id === newCat.id ? saved : c));
+                return updated.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            });
+        }
+    };
+
+    const updateCategory = async (id: string, cat: Partial<Category>) => {
+        setCategories((prev) =>
+            prev.map((c) => (c.id === id ? { ...c, ...cat } : c)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        );
+
+        const res = await fetch(`/api/categories/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cat),
+        });
+
+        if (!res.ok) {
+            const data = await res.json() as { error?: string };
+            setError(`Error al actualizar categoría: ${data.error ?? res.statusText}`);
+            await fetchAll();
+        } else {
+            const updated = await res.json() as Category;
+            setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+        }
+    };
+
+    const deleteCategory = async (id: string) => {
+        const prev = categories;
+        // Soft delete locally (just mark it so it can be filtered in UI, or actually remove if we want,
+        // but since we need historical data, we'll mark isActive = false)
+        setCategories((p) => p.map(c => c.id === id ? { ...c, isActive: false } : c));
+
+        const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+
+        if (!res.ok) {
+            setCategories(prev);
+            const data = await res.json() as { error?: string };
+            setError(`Error al archivar categoría: ${data.error ?? res.statusText}`);
         }
     };
 
@@ -225,6 +266,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateTransaction,
         deleteTransaction,
         addCategory,
+        updateCategory,
+        deleteCategory,
         addDebtAdjustment,
         updateDebtAdjustment,
         deleteDebtAdjustment,

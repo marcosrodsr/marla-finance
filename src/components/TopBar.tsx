@@ -35,7 +35,15 @@ export default function TopBar({ onAddPayment, onAddCategory }: TopBarProps) {
 
                 {showActions && (
                     <div className="flex items-center gap-2">
-                        {/* Mobile simplified actions if needed, though FAB is primary */}
+                        {onAddCategory && (
+                            <button
+                                onClick={onAddCategory}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-400 font-medium text-xs hover:bg-blue-500/20 active:scale-95 transition-all"
+                            >
+                                <PlusIcon className="w-3.5 h-3.5" />
+                                <span>Campo</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
