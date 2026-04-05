@@ -158,46 +158,18 @@ export function calculateTotals(
         }
 
         // === PERSONAL VIEW (currentUserId set) ===
-        // The PAYER (userId) determines the split, NOT the category scope:
-        //   userId = "pareja" → shared expense → split 50/50 for each person
-        //   userId = "marcos" or "camila" → individual expense → 100% that person only
+        // The conceptual owner determines the split, NOT who physically paid.
+        // Physical payments only create debts/credits, but do not affect your budget consumption.
         if (currentUserId) {
-            // Who physically paid the transaction? 
-            // If paying physically, cash outflow occurs.
-            const physicalPayer = tx.paidBy || tx.userId;
-
             if (tx.userId === "pareja") {
-                // Shared: each person bears 50% conceptually, but physically you might pay 100%
-                if (physicalPayer === currentUserId) {
-                    // You paid physically (maybe for yourself, maybe 100% shared)
-                    // We only count your conceptual part (50%) as your actual "expense" 
-                    // BUT for "Available Money" purposes, if you paid 100% physically, you have less cash.
-                    // HOWEVER, the standard here seems to be that shared debt is settled at and that
-                    // balance cards should reflect the CONCEPTUAL remaining money.
-                    // Wait, let's stick to the simplest: balance = income - expenses - savings.
-                    // Expenses = conceptual share.
-                    amount = Math.round(amount / 2);
-                } else if (physicalPayer === "pareja") {
-                    // Old data where paidBy wasn't set, assume you paid half
-                    amount = Math.round(amount / 2);
-                } else {
-                    // Someone else paid physically for a shared expense
-                    // You still conceptual owe 50%, so it counts as your "spent" for budget tracking.
-                    amount = Math.round(amount / 2);
-                }
+                // Shared expense: your conceptual burden is 50%
+                amount = Math.round(amount / 2);
             } else {
-                // Individual: only count if this user paid it physically OR conceptually
-                // If I paid for Camila (100% her expense), my cash goes down.
-                // If Camila paid for me (100% my expense), my cash stays same.
-
-                if (physicalPayer === currentUserId) {
-                    // I paid it physically. 
-                    // If it's my expense (userId === currentUserId), amount = full.
-                    // If it's Camila's expense (userId !== currentUserId), amount = full (because cash left my pocket).
+                // Individual expense: your conceptual burden is 100% IF it belongs to you
+                if (tx.userId === currentUserId) {
                     amount = tx.amountCents;
                 } else {
-                    // Someone else paid physically.
-                    return; // Skip: No immediate cash outflow for currentUserId
+                    return; // Skip: this is the partner's individual expense
                 }
             }
         }
@@ -389,24 +361,9 @@ export function getAccumulatedSavings(
         }
     });
 
-    let adjustmentsTotal = 0;
-    if (currentUserId) {
-        debtAdjustments.forEach(adj => {
-            if (!filterByDate(adj.date)) return;
-
-            if (adj.direction === "marcos_to_camila") {
-                // Camila paga a Marcos (Resta de Camila, suma a Marcos)
-                if (currentUserId === "camila") adjustmentsTotal -= adj.amountCents;
-                if (currentUserId === "marcos") adjustmentsTotal += adj.amountCents;
-            } else if (adj.direction === "camila_to_marcos") {
-                // Nueva deuda / Marcos paga a Camila (Suma a Camila, resta de Marcos)
-                if (currentUserId === "marcos") adjustmentsTotal -= adj.amountCents;
-                if (currentUserId === "camila") adjustmentsTotal += adj.amountCents;
-            }
-        });
-    }
-
-    const leftover = totals.income - totals.fixed - totals.recurring - totals.invested - jointSavings + adjustmentsTotal;
+    // Debt settlements do not alter Net Wealth (budget savings), they just transfer cash.
+    // So we don't apply debt adjustments to the leftover.
+    const leftover = totals.income - totals.fixed - totals.recurring - totals.invested - jointSavings;
     return Math.max(0, leftover);
 }
 
