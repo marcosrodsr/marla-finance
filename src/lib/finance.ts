@@ -88,7 +88,7 @@ export function filterByKind(
 // Filter transactions by user
 export function filterByUser(transactions: Transaction[], userId: string | null): Transaction[] {
     if (!userId) return transactions;
-    return transactions.filter((tx) => tx.userId === userId);
+    return transactions.filter((tx) => tx.userId === userId || tx.userId === "pareja");
 }
 
 // Get transactions for personal view (User's own + shared paid by "pareja")
