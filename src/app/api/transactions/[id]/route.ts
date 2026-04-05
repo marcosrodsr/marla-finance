@@ -41,6 +41,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         isShared: (row.is_shared as boolean) ?? false,
         paidBy: (row.paid_by as "marcos" | "camila") ?? undefined,
         isSettled: (row.is_settled as boolean) ?? false,
+        marketPurchaseId: (row.market_purchase_id as string) ?? undefined,
     };
 
     return NextResponse.json(tx);

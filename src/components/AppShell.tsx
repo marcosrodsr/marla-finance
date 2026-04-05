@@ -7,6 +7,7 @@ import SideNav from "./SideNav";
 import BottomNav from "./BottomNav";
 import AddPaymentModal from "./AddPaymentModal";
 import AddCategoryModal from "./AddCategoryModal";
+import AddMarketModal from "./AddMarketModal";
 import { useFinance } from "@/store/finance-store";
 import PlusIcon from "./icons/PlusIcon";
 import Button from "./Button";
@@ -19,6 +20,7 @@ type AppShellProps = {
 export default function AppShell({ children }: AppShellProps) {
     const { isCategoryModalOpen, setCategoryModalOpen } = useFinance();
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
 
     const pathname = usePathname();
     const showFAB = pathname === "/dashboard" || pathname === "/marcos" || pathname === "/camila" || pathname === "/transactions" || pathname === "/estadisticas";
@@ -60,6 +62,13 @@ export default function AppShell({ children }: AppShellProps) {
                         </Button>
 
                         <Button
+                            onClick={() => setIsMarketModalOpen(true)}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                        >
+                            Agregar Mercado
+                        </Button>
+
+                        <Button
                             onClick={() => setIsPaymentModalOpen(true)}
                             className="shadow-lg shadow-blue-500/20"
                         >
@@ -81,20 +90,37 @@ export default function AppShell({ children }: AppShellProps) {
                 <BottomNav />
             </div>
 
-            {/* FAB for mobile */}
+            {/* FABs for mobile */}
             {showFAB && (
-                <button
-                    onClick={() => setIsPaymentModalOpen(true)}
-                    className="lg:hidden fixed bottom-[calc(85px+env(safe-area-inset-bottom))] right-6 z-40 w-14 h-14 rounded-full shadow-[0_8px_20px_-4px_rgba(59,130,246,0.6)] flex items-center justify-center active:scale-90 transition-transform bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                    aria-label="Agregar pago"
-                >
-                    <PlusIcon className="w-6 h-6" />
-                </button>
+                <>
+                    {/* Agregar Mercado FAB (Stacked above) */}
+                    <button
+                        onClick={() => setIsMarketModalOpen(true)}
+                        className="lg:hidden fixed bottom-[calc(155px+env(safe-area-inset-bottom))] right-6 z-40 w-14 h-14 rounded-full shadow-[0_8px_20px_-4px_rgba(16,185,129,0.6)] flex items-center justify-center active:scale-90 transition-transform bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                        aria-label="Agregar Mercado"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    </button>
+
+                    {/* Agregar Pago FAB */}
+                    <button
+                        onClick={() => setIsPaymentModalOpen(true)}
+                        className="lg:hidden fixed bottom-[calc(85px+env(safe-area-inset-bottom))] right-6 z-40 w-14 h-14 rounded-full shadow-[0_8px_20px_-4px_rgba(59,130,246,0.6)] flex items-center justify-center active:scale-90 transition-transform bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                        aria-label="Agregar pago"
+                    >
+                        <PlusIcon className="w-6 h-6" />
+                    </button>
+                </>
             )}
 
             <AddPaymentModal 
                 isOpen={isPaymentModalOpen} 
                 onClose={() => setIsPaymentModalOpen(false)} 
+            />
+
+            <AddMarketModal
+                isOpen={isMarketModalOpen}
+                onClose={() => setIsMarketModalOpen(false)}
             />
 
             <AddCategoryModal isOpen={isCategoryModalOpen} onClose={() => setCategoryModalOpen(false)} />

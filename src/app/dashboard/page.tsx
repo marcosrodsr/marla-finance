@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useFinance } from "@/store/finance-store";
 import {
     filterByMonthYear,
@@ -12,7 +12,8 @@ import {
     formatEur,
     getAccumulatedSavings,
     getWeeksOfMonth,
-    getCurrentWeekIdx
+    getCurrentWeekIdx,
+    FIXED_NAMES
 } from "@/lib/finance";
 import { ViewMode, MonthYear, Transaction } from "@/types";
 import { theme } from "@/lib/theme";
@@ -29,23 +30,40 @@ import TransactionCalendar from "@/components/TransactionCalendar";
 import CategoryDetailsModal from "@/components/CategoryDetailsModal";
 import { Category } from "@/types";
 import SearchInput from "@/components/SearchInput";
+import MarketPurchaseDetailsModal from "@/components/MarketPurchaseDetailsModal";
+import SummaryDetailsModal from "@/components/SummaryDetailsModal";
 
 export default function DashboardPage() {
-    const { transactions, categories, users, loading, error } = useFinance();
+    const { transactions, categories, users, loading, error, selectedDate: date, setSelectedDate: setDate } = useFinance();
 
     const [viewMode, setViewMode] = useState<ViewMode>("monthly");
-    const [date, setDate] = useState<MonthYear>(() => {
-        const now = new Date();
-        return { month: now.getMonth(), year: now.getFullYear() };
-    });
 
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+    const [editingMarketTx, setEditingMarketTx] = useState<Transaction | null>(null);
     const [showCalendar, setShowCalendar] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [summaryModal, setSummaryModal] = useState<{ title: string; txs: Transaction[] } | null>(null);
 
     // Manage Selected Week for the Whole Dashboard
     const weeks = useMemo(() => getWeeksOfMonth(date.year, date.month), [date.year, date.month]);
     const [selectedWeekIdx, setSelectedWeekIdx] = useState(() => getCurrentWeekIdx(weeks, date.month, date.year));
+
+    // When month/year changes, reset to the correct week:
+    // - Past months: last week (show all data)
+    // - Current month: the actual current week
+    useEffect(() => {
+        const today = new Date();
+        const isCurrentMonth = date.month === today.getMonth() && date.year === today.getFullYear();
+        if (isCurrentMonth) {
+            // Recalculate current week with fresh weeks
+            const freshWeeks = getWeeksOfMonth(date.year, date.month);
+            setSelectedWeekIdx(getCurrentWeekIdx(freshWeeks, date.month, date.year));
+        } else {
+            // Past or future month: show all data (last week)
+            const freshWeeks = getWeeksOfMonth(date.year, date.month);
+            setSelectedWeekIdx(Math.max(0, freshWeeks.length - 1));
+        }
+    }, [date.month, date.year]);
 
     // Filter based on view mode
     const filtered = useMemo(() => {
@@ -98,16 +116,26 @@ export default function DashboardPage() {
         return total;
     }, [transactions, date, upToDay, categories]);
 
-    // Charts Data
-    const chartData = viewMode === "monthly"
-        ? {
-            spent: getDailyTotals(filtered, date.month, date.year, categories, "variable", null),
-            income: getDailyTotals(filtered, date.month, date.year, categories, "income", null),
+    const handleEditTx = (tx: Transaction) => {
+        if (tx.marketPurchaseId) {
+            setEditingMarketTx(tx);
+        } else {
+            setEditingTx(tx);
         }
-        : {
-            spent: getMonthlyTotalsForYear(transactions, date.year, categories, "variable", null),
-            income: getMonthlyTotalsForYear(transactions, date.year, categories, "income", null),
-        };
+    };
+
+    // Charts Data
+    const chartData = useMemo(() => {
+        return viewMode === "monthly"
+            ? {
+                spent: getDailyTotals(filtered, date.month, date.year, categories, "variable", null),
+                income: getDailyTotals(filtered, date.month, date.year, categories, "income", null),
+            }
+            : {
+                spent: getMonthlyTotalsForYear(transactions, date.year, categories, "variable", null),
+                income: getMonthlyTotalsForYear(transactions, date.year, categories, "income", null),
+            };
+    }, [filtered, transactions, viewMode, date, categories]);
 
     const lineSeries = [
         { name: "Ingresos", data: chartData.income, color: theme.chart.earned },
@@ -167,18 +195,36 @@ export default function DashboardPage() {
                     value={formatEur(income)}
                     trend="up"
                     icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Ingresos",
+                        txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'income')
+                    })}
                 />
                 <StatCard
                     label="Gastos Fijos"
                     value={formatEur(fixed)}
                     trend="down"
                     icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>}
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Gastos Fijos",
+                        txs: filtered.filter(t => {
+                            const cat = categories.find(c => c.id === t.categoryId);
+                            return (cat?.kind === 'fixed' || cat?.kind === 'variable') && FIXED_NAMES.includes(cat?.label ?? '') && t.userId === 'pareja';
+                        })
+                    })}
                 />
                 <StatCard
                     label="Gastos Recur."
                     value={formatEur(recurring)}
                     trend="down"
                     icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>}
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Gastos Recurrentes",
+                        txs: filtered.filter(t => {
+                            const cat = categories.find(c => c.id === t.categoryId);
+                            return (cat?.kind === 'fixed' || cat?.kind === 'variable') && !FIXED_NAMES.includes(cat?.label ?? '') && t.userId === 'pareja';
+                        })
+                    })}
                 />
                 <StatCard
                     label="Ah. Pareja"
@@ -186,12 +232,23 @@ export default function DashboardPage() {
                     trend="up"
                     subtitle="Acumulado Año"
                     icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    onClick={() => setSummaryModal({
+                        title: "Ahorros Pareja (Acum. Año)",
+                        txs: transactions.filter(t => {
+                            const cat = categories.find(c => c.id === t.categoryId);
+                            return cat?.kind === 'saving' && cat.scope === 'shared';
+                        })
+                    })}
                 />
                 <StatCard
                     label="Inversiones"
                     value={formatEur(invested)}
                     trend="up"
                     icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>}
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Inversiones",
+                        txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'investment')
+                    })}
                 />
                 <StatCard
                     label="Disponible"
@@ -264,7 +321,7 @@ export default function DashboardPage() {
                         users={users}
                         limit={8}
                         searchTerm={searchTerm}
-                        onEdit={setEditingTx}
+                        onEdit={handleEditTx}
                     />
                 </Card>
             </div>
@@ -274,6 +331,14 @@ export default function DashboardPage() {
                 onClose={() => setEditingTx(null)}
                 initialData={editingTx}
             />
+
+            {editingMarketTx && (
+                <MarketPurchaseDetailsModal
+                    isOpen={!!editingMarketTx}
+                    onClose={() => setEditingMarketTx(null)}
+                    marketPurchaseId={editingMarketTx.marketPurchaseId || null}
+                />
+            )}
 
             {showCalendar && (
                 <TransactionCalendar
@@ -292,7 +357,17 @@ export default function DashboardPage() {
                 transactions={categoryTransactions}
                 categories={categories}
                 users={users}
-                onEdit={setEditingTx}
+                onEdit={handleEditTx}
+            />
+
+            <SummaryDetailsModal
+                isOpen={!!summaryModal}
+                onClose={() => setSummaryModal(null)}
+                title={summaryModal?.title ?? ""}
+                transactions={summaryModal?.txs ?? []}
+                categories={categories}
+                users={users}
+                onEdit={handleEditTx}
             />
         </div>
     );

@@ -36,12 +36,29 @@ const CATEGORY_PALETTE = [
 ];
 
 export default function EstadisticasPage() {
-    const { transactions, categories, users, loading, error } = useFinance();
+    const { transactions, categories, users, loading, error, selectedDate, setSelectedDate } = useFinance();
 
     const now = new Date();
     const [periodMode, setPeriodMode] = useState<PeriodMode>("monthly");
-    const [month, setMonth] = useState(now.getMonth());
-    const [year, setYear] = useState(now.getFullYear());
+    const { month, year } = selectedDate;
+
+    const setMonth = (m: number | ((prev: number) => number)) => {
+        if (typeof m === "function") {
+            const nextMonth = m(selectedDate.month);
+            setSelectedDate({ ...selectedDate, month: nextMonth });
+        } else {
+            setSelectedDate({ ...selectedDate, month: m });
+        }
+    };
+
+    const setYear = (y: number | ((prev: number) => number)) => {
+        if (typeof y === "function") {
+            const nextYear = y(selectedDate.year);
+            setSelectedDate({ ...selectedDate, year: nextYear });
+        } else {
+            setSelectedDate({ ...selectedDate, year: y });
+        }
+    };
     const [userFilter, setUserFilter] = useState<UserFilter>("all");
 
     // Which categories the user has toggled OFF (excluded from view)

@@ -15,6 +15,7 @@ function mapToTransaction(row: Record<string, unknown>): Transaction {
         isShared: (row.is_shared as boolean) ?? false,
         paidBy: (row.paid_by as "marcos" | "camila") ?? undefined,
         isSettled: (row.is_settled as boolean) ?? false,
+        marketPurchaseId: (row.market_purchase_id as string) ?? undefined,
     };
 }
 

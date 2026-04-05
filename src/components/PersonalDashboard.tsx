@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useFinance } from "@/store/finance-store";
 import {
     filterByMonthYear,
@@ -15,7 +15,8 @@ import {
     getWeeksOfMonth,
     getCurrentWeekIdx,
     calculateSharedDebt,
-    BASE_PERSONAL_DEBT_CENTS
+    BASE_PERSONAL_DEBT_CENTS,
+    FIXED_NAMES
 } from "@/lib/finance";
 import { ViewMode, MonthYear, Transaction, CategoryKind } from "@/types";
 import { theme } from "@/lib/theme";
@@ -31,6 +32,8 @@ import TransactionCalendar from "@/components/TransactionCalendar";
 import CategoryDetailsModal from "@/components/CategoryDetailsModal";
 import { Category } from "@/types";
 import SearchInput from "@/components/SearchInput";
+import MarketPurchaseDetailsModal from "@/components/MarketPurchaseDetailsModal";
+import SummaryDetailsModal from "@/components/SummaryDetailsModal";
 
 type PersonalDashboardProps = {
     userId: string;
@@ -38,19 +41,17 @@ type PersonalDashboardProps = {
 };
 
 export default function PersonalDashboard({ userId, userName }: PersonalDashboardProps) {
-    const { transactions, categories, users, debtAdjustments } = useFinance();
+    const { transactions, categories, users, debtAdjustments, selectedDate: date, setSelectedDate: setDate } = useFinance();
 
     const [viewMode, setViewMode] = useState<ViewMode>("monthly");
-    const [date, setDate] = useState<MonthYear>(() => {
-        const now = new Date();
-        return { month: now.getMonth(), year: now.getFullYear() };
-    });
 
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+    const [editingMarketTx, setEditingMarketTx] = useState<Transaction | null>(null);
     const [showCalendar, setShowCalendar] = useState(false);
     const [kind, setKind] = useState<CategoryKind | null>(null);
     const [categoryId, setCategoryId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [summaryModal, setSummaryModal] = useState<{ title: string; txs: Transaction[] } | null>(null);
 
     // Filter by user and date (Include Shared)
     const userTransactions = getPersonalViewTransactions(transactions, userId, categories);
@@ -58,6 +59,21 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
     // Manage Selected Week for the Whole Dashboard
     const weeks = useMemo(() => getWeeksOfMonth(date.year, date.month), [date.year, date.month]);
     const [selectedWeekIdx, setSelectedWeekIdx] = useState(() => getCurrentWeekIdx(weeks, date.month, date.year));
+
+    // When month/year changes, reset to the correct week:
+    // - Past months: last week (show all data)
+    // - Current month: the actual current week
+    useEffect(() => {
+        const today = new Date();
+        const isCurrentMonth = date.month === today.getMonth() && date.year === today.getFullYear();
+        if (isCurrentMonth) {
+            const freshWeeks = getWeeksOfMonth(date.year, date.month);
+            setSelectedWeekIdx(getCurrentWeekIdx(freshWeeks, date.month, date.year));
+        } else {
+            const freshWeeks = getWeeksOfMonth(date.year, date.month);
+            setSelectedWeekIdx(Math.max(0, freshWeeks.length - 1));
+        }
+    }, [date.month, date.year]);
 
     // Filter monthly based on selection
     const filtered = useMemo(() => {
@@ -144,6 +160,14 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
         return result;
     }, [userTransactions, date.month, date.year, kind, categoryId, categories]);
 
+    const handleEditTx = (tx: Transaction) => {
+        if (tx.marketPurchaseId) {
+            setEditingMarketTx(tx);
+        } else {
+            setEditingTx(tx);
+        }
+    };
+
     const userDebtAdjustments = useMemo(() => {
         return debtAdjustments.filter(adj => {
             const d = new Date(adj.date);
@@ -213,11 +237,59 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
 
             {/* KPIs Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-                <StatCard label="Ingresos" value={formatEur(income)} trend="up" />
-                <StatCard label="Gastos Fijos" value={formatEur(fixed)} trend="down" />
-                <StatCard label="Gastos Recur." value={formatEur(recurring)} trend="down" />
-                <StatCard label="Ah. Personal" value={formatEur(savingsPersonal)} subtitle="Acumulado Año" />
-                <StatCard label="Inversiones" value={formatEur(invested)} />
+                <StatCard
+                    label="Ingresos"
+                    value={formatEur(income)}
+                    trend="up"
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Ingresos",
+                        txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'income')
+                    })}
+                />
+                <StatCard
+                    label="Gastos Fijos"
+                    value={formatEur(fixed)}
+                    trend="down"
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Gastos Fijos",
+                        txs: filtered.filter(t => {
+                            const cat = categories.find(c => c.id === t.categoryId);
+                            return (cat?.kind === 'fixed' || cat?.kind === 'variable') && FIXED_NAMES.includes(cat?.label ?? '');
+                        })
+                    })}
+                />
+                <StatCard
+                    label="Gastos Recur."
+                    value={formatEur(recurring)}
+                    trend="down"
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Gastos Recurrentes",
+                        txs: filtered.filter(t => {
+                            const cat = categories.find(c => c.id === t.categoryId);
+                            return (cat?.kind === 'fixed' || cat?.kind === 'variable') && !FIXED_NAMES.includes(cat?.label ?? '');
+                        })
+                    })}
+                />
+                <StatCard
+                    label="Ah. Personal"
+                    value={formatEur(savingsPersonal)}
+                    subtitle="Acumulado Año"
+                    onClick={() => setSummaryModal({
+                        title: "Ahorros Personales (Acum. Año)",
+                        txs: filtered.filter(t => {
+                            const cat = categories.find(c => c.id === t.categoryId);
+                            return cat?.kind === 'saving' && cat.scope !== 'shared' && t.userId === userId;
+                        })
+                    })}
+                />
+                <StatCard
+                    label="Inversiones"
+                    value={formatEur(invested)}
+                    onClick={() => setSummaryModal({
+                        title: "Detalle Inversiones",
+                        txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'investment')
+                    })}
+                />
 
                 <StatCard
                     label="Ah. Pareja"
@@ -366,7 +438,7 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                     users={users}
                     limit={10}
                     searchTerm={searchTerm}
-                    onEdit={setEditingTx}
+                    onEdit={handleEditTx}
                     contextUserId={userId}
                 />
             </Card>
@@ -416,6 +488,15 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 initialData={editingTx}
             />
 
+            {editingMarketTx && (
+                <MarketPurchaseDetailsModal
+                    isOpen={!!editingMarketTx}
+                    onClose={() => setEditingMarketTx(null)}
+                    marketPurchaseId={editingMarketTx.marketPurchaseId || null}
+                />
+            )}
+
+
 
 
             {showCalendar && (
@@ -436,7 +517,18 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 categories={categories}
                 users={users}
                 contextUserId={userId}
-                onEdit={setEditingTx}
+                onEdit={handleEditTx}
+            />
+
+            <SummaryDetailsModal
+                isOpen={!!summaryModal}
+                onClose={() => setSummaryModal(null)}
+                title={summaryModal?.title ?? ""}
+                transactions={summaryModal?.txs ?? []}
+                categories={categories}
+                users={users}
+                contextUserId={userId}
+                onEdit={handleEditTx}
             />
         </div>
     );

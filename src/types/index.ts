@@ -31,6 +31,7 @@ export type Transaction = {
     isShared?: boolean;
     paidBy?: "marcos" | "camila"; // Who physically paid — only relevant for pareja transactions
     isSettled?: boolean; // If true, the debt portion of this transaction is resolved
+    marketPurchaseId?: string; // Links this transaction to a specific market purchase
 };
 
 export type PeriodFilter = "current-month" | "previous-month" | "current-year";
@@ -52,4 +53,43 @@ export type DebtAdjustment = {
     description: string;
     amountCents: number;
     direction: DebtAdjustmentDirection; // "marcos_to_camila" = Marcos pays Camila (reduces Camila's debt)
+};
+
+// --- MercaData features ---
+export type MarketProductTipo = 'comida' | 'personal' | 'casa';
+export type MarketProductUnidad = 'unidad' | 'kg' | 'g' | 'litro';
+export type MarketProductUsuario = 'pareja' | 'marcos' | 'camila';
+
+export type MarketProduct = {
+  id: string;
+  createdAt: string;
+  name: string;
+  priceCents: number;
+  tipo: MarketProductTipo;
+  usuario: MarketProductUsuario;
+  establecimiento: string;
+  unidad: MarketProductUnidad;
+  isActive: boolean;
+};
+
+export type MarketPurchaseItem = {
+  id: string;
+  purchaseId: string;
+  productId: string | null;
+  nameSnapshot: string;
+  priceCents: number;
+  qty: number;
+  tipoUsuario: MarketProductUsuario;
+  tipo?: MarketProductTipo; // Optional since it's only in legacy DB rows or UI state
+};
+
+export type MarketPurchase = {
+  id: string;
+  createdAt: string;
+  date: string;
+  paidBy: 'marcos' | 'camila';
+  establecimiento: string;
+  totalCents: number;
+  note?: string;
+  items: MarketPurchaseItem[];
 };
