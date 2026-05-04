@@ -108,6 +108,9 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
     // Calculate Totals for CURRENT VIEW
     const { income, fixed, recurring, invested } = calculateTotals(filtered, categories, userId);
 
+    // Monthly savings = income - fixed expenses - recurring expenses - investments
+    const monthlySavings = income - fixed - recurring - invested;
+
     // YTD cumulative savings — computed from all transactions up to the current selection
     const savingsJoint = useMemo(() => {
         // Sum of all explicit joint saving txs by this user YTD up to current week/month
@@ -235,90 +238,103 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 />
             </div>
 
-            {/* KPIs Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-                <StatCard
-                    label="Ingresos"
-                    value={formatEur(income)}
-                    trend="up"
-                    onClick={() => setSummaryModal({
-                        title: "Detalle Ingresos",
-                        txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'income')
-                    })}
-                />
-                <StatCard
-                    label="Gastos Fijos"
-                    value={formatEur(fixed)}
-                    trend="down"
-                    onClick={() => setSummaryModal({
-                        title: "Detalle Gastos Fijos",
-                        txs: filtered.filter(t => {
-                            const cat = categories.find(c => c.id === t.categoryId);
-                            return (cat?.kind === 'fixed' || cat?.kind === 'variable') && FIXED_NAMES.includes(cat?.label ?? '');
-                        })
-                    })}
-                />
-                <StatCard
-                    label="Gastos Recur."
-                    value={formatEur(recurring)}
-                    trend="down"
-                    onClick={() => setSummaryModal({
-                        title: "Detalle Gastos Recurrentes",
-                        txs: filtered.filter(t => {
-                            const cat = categories.find(c => c.id === t.categoryId);
-                            return (cat?.kind === 'fixed' || cat?.kind === 'variable') && !FIXED_NAMES.includes(cat?.label ?? '');
-                        })
-                    })}
-                />
-                <StatCard
-                    label="Ah. Personal"
-                    value={formatEur(savingsPersonal)}
-                    subtitle="Acumulado Año"
-                    onClick={() => setSummaryModal({
-                        title: "Ahorros Personales (Acum. Año)",
-                        txs: filtered.filter(t => {
-                            const cat = categories.find(c => c.id === t.categoryId);
-                            return cat?.kind === 'saving' && cat.scope !== 'shared' && t.userId === userId;
-                        })
-                    })}
-                />
-                <StatCard
-                    label="Inversiones"
-                    value={formatEur(invested)}
-                    onClick={() => setSummaryModal({
-                        title: "Detalle Inversiones",
-                        txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'investment')
-                    })}
-                />
+            {/* KPIs — Fila 1: Flujo del mes (4 tarjetas) */}
+            <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Flujo del mes</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-stretch">
+                    <StatCard
+                        label="Ingresos"
+                        value={formatEur(income)}
+                        trend="up"
+                        onClick={() => setSummaryModal({
+                            title: "Detalle Ingresos",
+                            txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'income')
+                        })}
+                    />
+                    <StatCard
+                        label="Gastos Fijos"
+                        value={formatEur(fixed)}
+                        trend="down"
+                        onClick={() => setSummaryModal({
+                            title: "Detalle Gastos Fijos",
+                            txs: filtered.filter(t => {
+                                const cat = categories.find(c => c.id === t.categoryId);
+                                return (cat?.kind === 'fixed' || cat?.kind === 'variable') && FIXED_NAMES.includes(cat?.label ?? '');
+                            })
+                        })}
+                    />
+                    <StatCard
+                        label="Gastos Recur."
+                        value={formatEur(recurring)}
+                        trend="down"
+                        onClick={() => setSummaryModal({
+                            title: "Detalle Gastos Recurrentes",
+                            txs: filtered.filter(t => {
+                                const cat = categories.find(c => c.id === t.categoryId);
+                                return (cat?.kind === 'fixed' || cat?.kind === 'variable') && !FIXED_NAMES.includes(cat?.label ?? '');
+                            })
+                        })}
+                    />
+                    <StatCard
+                        label="Ahorro Mes"
+                        value={formatEur(monthlySavings)}
+                        subtitle="Este mes"
+                        trend={monthlySavings >= 0 ? "up" : "down"}
+                    />
+                </div>
+            </div>
 
-                <StatCard
-                    label="Ah. Pareja"
-                    value={formatEur(savingsJoint)}
-                    subtitle="Acumulado Año"
-                    onClick={handleAddJointSavings}
-                    icon={
-                        <div className="flex items-center gap-1 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span className="text-[10px] font-bold uppercase tracking-wider">+ Aportar</span>
-                            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                    }
-                />
-
-                <StatCard
-                    label={sharedDebt > 0 ? "Deuda Mes" : (sharedCredit > 0 ? "Crédito Mes" : "Al día (Mes)")}
-                    value={formatEur(sharedDebt || sharedCredit)}
-                    subtitle="Gastos compartidos"
-                    trend={sharedDebt > 0 ? "down" : (sharedCredit > 0 ? "up" : "neutral")}
-                />
-
-                <StatCard
-                    label={userId === "camila" ? "Deuda Marcos" : "Deuda Camila"}
-                    value={formatEur(personalDebtBalance)}
-                    subtitle="Personal (Histórico)"
-                    trend="neutral"
-                />
+            {/* KPIs — Fila 2: Ahorros & Balance (5 tarjetas) */}
+            <div className="space-y-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ahorros & Balance</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-stretch">
+                    <StatCard
+                        label="Ah. Personal"
+                        value={formatEur(savingsPersonal)}
+                        subtitle="Acumulado Año"
+                        onClick={() => setSummaryModal({
+                            title: "Ahorros Personales (Acum. Año)",
+                            txs: filtered.filter(t => {
+                                const cat = categories.find(c => c.id === t.categoryId);
+                                return cat?.kind === 'saving' && cat.scope !== 'shared' && t.userId === userId;
+                            })
+                        })}
+                    />
+                    <StatCard
+                        label="Inversiones"
+                        value={formatEur(invested)}
+                        onClick={() => setSummaryModal({
+                            title: "Detalle Inversiones",
+                            txs: filtered.filter(t => categories.find(c => c.id === t.categoryId)?.kind === 'investment')
+                        })}
+                    />
+                    <StatCard
+                        label="Ah. Pareja"
+                        value={formatEur(savingsJoint)}
+                        subtitle="Acumulado Año"
+                        onClick={handleAddJointSavings}
+                        icon={
+                            <div className="flex items-center gap-1 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <span className="text-[10px] font-bold uppercase tracking-wider">+ Aportar</span>
+                                <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                            </div>
+                        }
+                    />
+                    <StatCard
+                        label={sharedDebt > 0 ? "Deuda Mes" : (sharedCredit > 0 ? "Crédito Mes" : "Al día (Mes)")}
+                        value={formatEur(sharedDebt || sharedCredit)}
+                        subtitle="Gastos compartidos"
+                        trend={sharedDebt > 0 ? "down" : (sharedCredit > 0 ? "up" : "neutral")}
+                    />
+                    <StatCard
+                        label={userId === "camila" ? "Deuda Marcos" : "Deuda Camila"}
+                        value={formatEur(personalDebtBalance)}
+                        subtitle="Personal (Histórico)"
+                        trend="neutral"
+                    />
+                </div>
             </div>
 
             {/* Charts Section */}
