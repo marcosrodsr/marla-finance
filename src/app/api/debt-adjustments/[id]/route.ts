@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { DebtAdjustment } from "@/types";
 
 function mapToDebtAdjustment(row: Record<string, unknown>): DebtAdjustment {
@@ -17,6 +17,7 @@ export async function PUT(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const supabase = await createClient();
     const { id } = await params;
     const body = await req.json() as Partial<DebtAdjustment>;
 
@@ -43,6 +44,7 @@ export async function DELETE(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const supabase = await createClient();
     const { id } = await params;
 
     const { error } = await supabase

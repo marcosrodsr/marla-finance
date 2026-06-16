@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { MarketPurchase, MarketPurchaseItem } from "@/types";
 
 function mapItem(row: Record<string, unknown>): MarketPurchaseItem {
@@ -29,6 +29,7 @@ function mapPurchase(row: Record<string, unknown>, items: MarketPurchaseItem[] =
 
 // GET /api/market-purchases — list all purchases with items embedded
 export async function GET() {
+    const supabase = await createClient();
     const { data: purchases, error: pErr } = await supabase
         .from("market_purchases")
         .select("*")
@@ -62,6 +63,7 @@ export async function GET() {
 
 // POST /api/market-purchases — create purchase + items + linked transactions
 export async function POST(req: NextRequest) {
+    const supabase = await createClient();
     const body = await req.json() as {
         purchase: Omit<MarketPurchase, "id" | "createdAt" | "items">;
         items: Omit<MarketPurchaseItem, "id" | "purchaseId">[];

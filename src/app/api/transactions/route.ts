@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { Transaction } from "@/types";
 
 // Map DB row → our Transaction type
@@ -21,6 +21,7 @@ function mapToTransaction(row: Record<string, unknown>): Transaction {
 
 // GET /api/transactions
 export async function GET() {
+    const supabase = await createClient();
     const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -36,6 +37,7 @@ export async function GET() {
 
 // POST /api/transactions
 export async function POST(req: NextRequest) {
+    const supabase = await createClient();
     const body = await req.json() as Partial<Transaction>;
 
     const { data, error } = await supabase

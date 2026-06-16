@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { Category } from "@/types";
 
 function mapToCategory(row: Record<string, unknown>): Category {
@@ -17,6 +17,7 @@ function mapToCategory(row: Record<string, unknown>): Category {
 
 // GET /api/categories
 export async function GET() {
+    const supabase = await createClient();
     const { data, error } = await supabase
         .from("categories")
         .select("*")
@@ -32,6 +33,7 @@ export async function GET() {
 
 // POST /api/categories
 export async function POST(req: NextRequest) {
+    const supabase = await createClient();
     const body = await req.json() as Partial<Category>;
 
     const { data, error } = await supabase

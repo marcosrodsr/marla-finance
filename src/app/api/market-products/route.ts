@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { MarketProduct } from "@/types";
 
 function mapToProduct(row: Record<string, unknown>): MarketProduct {
@@ -18,6 +18,7 @@ function mapToProduct(row: Record<string, unknown>): MarketProduct {
 
 // GET /api/market-products
 export async function GET() {
+    const supabase = await createClient();
     const { data, error } = await supabase
         .from("market_products")
         .select("*")
@@ -30,6 +31,7 @@ export async function GET() {
 
 // POST /api/market-products
 export async function POST(req: NextRequest) {
+    const supabase = await createClient();
     const body = await req.json() as Partial<MarketProduct>;
 
     const { data, error } = await supabase

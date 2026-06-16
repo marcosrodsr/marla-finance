@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { Transaction } from "@/types";
 
 type Params = { params: Promise<{ id: string }> };
 
 // PUT /api/transactions/:id
 export async function PUT(req: NextRequest, { params }: Params) {
+    const supabase = await createClient();
     const { id } = await params;
     const body = await req.json() as Partial<Transaction>;
 
@@ -49,6 +50,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 // DELETE /api/transactions/:id
 export async function DELETE(_req: NextRequest, { params }: Params) {
+    const supabase = await createClient();
     const { id } = await params;
 
     const { error } = await supabase

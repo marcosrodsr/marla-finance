@@ -2,8 +2,11 @@
 
 import Card from "@/components/Card";
 import Button from "@/components/Button";
+import { useFinance } from "@/store/finance-store";
 
 export default function SettingsPage() {
+    const { signOut, currentUser } = useFinance();
+
     const handleReset = () => {
         if (confirm("¿Estás seguro de que deseas borrar todos los datos locales? Esto te devolverá al estado inicial de demostración.")) {
             localStorage.clear();
@@ -29,6 +32,18 @@ export default function SettingsPage() {
                         className="bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-500/30"
                     >
                         Borrar Datos y Restaurar
+                    </Button>
+                </div>
+
+                <div className="py-6 border-b border-slate-800">
+                    <h3 className="text-lg font-bold text-slate-200 mb-2">Sesión</h3>
+                    {currentUser && (
+                        <p className="text-sm text-slate-400 mb-6">
+                            Conectado como <span className="text-slate-200 font-medium">{currentUser.email}</span>
+                        </p>
+                    )}
+                    <Button variant="danger" onClick={signOut}>
+                        Cerrar sesión
                     </Button>
                 </div>
 

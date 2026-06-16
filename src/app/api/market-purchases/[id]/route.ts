@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { MarketPurchase, MarketPurchaseItem } from "@/types";
 
 function mapItem(row: Record<string, unknown>): MarketPurchaseItem {
@@ -16,6 +16,7 @@ function mapItem(row: Record<string, unknown>): MarketPurchaseItem {
 
 // DELETE /api/market-purchases/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const supabase = await createClient();
     const { id } = await params;
 
     // Delete linked transactions first
@@ -33,6 +34,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
 // GET /api/market-purchases/[id] — single purchase with items
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const supabase = await createClient();
     const { id } = await params;
 
     const { data: purchase, error: pErr } = await supabase
@@ -67,6 +69,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 // PUT /api/market-purchases/[id] — update purchase + items + linked transactions
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const supabase = await createClient();
     const { id } = await params;
     const body = await req.json() as {
         purchase: Omit<MarketPurchase, "id" | "createdAt" | "items">;

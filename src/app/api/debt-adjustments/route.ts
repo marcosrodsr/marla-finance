@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { DebtAdjustment } from "@/types";
 
 function mapToDebtAdjustment(row: Record<string, unknown>): DebtAdjustment {
@@ -14,6 +14,7 @@ function mapToDebtAdjustment(row: Record<string, unknown>): DebtAdjustment {
 }
 
 export async function GET() {
+    const supabase = await createClient();
     const { data, error } = await supabase
         .from("debt_adjustments")
         .select("*")
@@ -27,6 +28,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+    const supabase = await createClient();
     const body = await req.json() as Partial<DebtAdjustment>;
 
     const { data, error } = await supabase

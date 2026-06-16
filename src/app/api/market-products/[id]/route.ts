@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { MarketProduct } from "@/types";
 
 function mapToProduct(row: Record<string, unknown>): MarketProduct {
@@ -18,6 +18,7 @@ function mapToProduct(row: Record<string, unknown>): MarketProduct {
 
 // PUT /api/market-products/[id]
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const supabase = await createClient();
     const { id } = await params;
     const body = await req.json() as Partial<MarketProduct>;
 
@@ -42,6 +43,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 // DELETE /api/market-products/[id] — soft delete (is_active = false)
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const supabase = await createClient();
     const { id } = await params;
 
     const { error } = await supabase

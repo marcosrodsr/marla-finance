@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
     Category,
     Transaction,
@@ -12,6 +13,13 @@ import {
     MonthYear,
 } from "@/types";
 import { USERS } from "@/lib/mock";
+import { createClient } from "@/lib/supabase/client";
+
+type CurrentUser = {
+    id: string;
+    email: string;
+    appUserId: "marcos" | "camila" | null;
+};
 
 type FinanceStore = {
     users: User[];
@@ -51,17 +59,22 @@ type FinanceStore = {
     selectedDate: MonthYear;
     setSelectedDate: (date: MonthYear) => void;
 
+    currentUser: CurrentUser | null;
+    signOut: () => Promise<void>;
+
     refresh: () => Promise<void>;
 };
 
 const FinanceContext = createContext<FinanceStore | null>(null);
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
+    const router = useRouter();
+
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [debtAdjustments, setDebtAdjustments] = useState<DebtAdjustment[]>([]);
     const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
-    
+
     // MercaData state
     const [marketProducts, setMarketProducts] = useState<MarketProduct[]>([]);
     const [marketPurchases, setMarketPurchases] = useState<MarketPurchase[]>([]);
@@ -69,6 +82,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
     // Persisted selected date
     const [selectedDate, setSelectedDateState] = useState<MonthYear>(() => {
@@ -137,6 +151,27 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         void fetchAll();
     }, [fetchAll]);
+
+    // Resolve the logged-in Supabase user once on mount.
+    // getUser() validates against the server — safer than getSession() which only reads the cookie.
+    useEffect(() => {
+        const supabase = createClient();
+        void supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) return;
+            setCurrentUser({
+                id: user.id,
+                email: user.email ?? "",
+                appUserId: (user.user_metadata?.app_user_id as "marcos" | "camila") ?? null,
+            });
+        });
+    }, []);
+
+    const signOut = useCallback(async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/login");
+        router.refresh();
+    }, [router]);
 
     const addTransaction = async (tx: Omit<Transaction, "id" | "createdAt">) => {
         const newTx: Transaction = {
@@ -540,6 +575,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setCategoryModalOpen,
         selectedDate,
         setSelectedDate,
+        currentUser,
+        signOut,
         budgetedAmount: 1800 // Hardcoded for now
     };
 

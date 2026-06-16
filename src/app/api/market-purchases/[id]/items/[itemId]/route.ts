@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 
 type Params = { params: Promise<{ id: string; itemId: string }> };
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
+    const supabase = await createClient();
     const { id: purchaseId, itemId } = await params;
 
     // 1. Delete the item

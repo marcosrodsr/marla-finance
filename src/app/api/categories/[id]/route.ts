@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { Category } from "@/types";
 
 export async function PUT(
@@ -7,6 +7,7 @@ export async function PUT(
     context: { params: Promise<{ id: string }> }
 ) {
     try {
+        const supabase = await createClient();
         const { id } = await context.params;
         const body = await req.json() as Partial<Category>;
 
@@ -57,6 +58,7 @@ export async function DELETE(
     context: { params: Promise<{ id: string }> }
 ) {
     try {
+        const supabase = await createClient();
         const { id } = await context.params;
 
         // Perform Soft Delete
