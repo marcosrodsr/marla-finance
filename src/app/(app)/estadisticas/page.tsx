@@ -196,14 +196,14 @@ export default function EstadisticasPage() {
                     </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Period */}
-                    <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/60 border border-white/5">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+                    {/* Period - full width on mobile */}
+                    <div className="flex p-1 rounded-xl bg-slate-900/60 border border-white/5">
                         {(["monthly", "annual"] as PeriodMode[]).map((m) => (
                             <button
                                 key={m}
                                 onClick={() => setPeriodMode(m)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                                className={`flex-1 sm:flex-none text-center px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                                     periodMode === m ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
                                 }`}
                             >
@@ -212,36 +212,36 @@ export default function EstadisticasPage() {
                         ))}
                     </div>
 
-                    {/* Month navigator */}
+                    {/* Month/Year navigator - full width on mobile */}
                     {periodMode === "monthly" ? (
-                        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/60 border border-white/5">
+                        <div className="flex items-center p-1 rounded-xl bg-slate-900/60 border border-white/5">
                             <button
                                 onClick={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
-                                className="px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-xs"
+                                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-2 sm:py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-base sm:text-xs shrink-0"
                             >‹</button>
-                            <span className="px-2 text-xs font-semibold text-slate-200 min-w-[90px] text-center">
+                            <span className="flex-1 text-center text-xs font-semibold text-slate-200 sm:flex-none sm:min-w-[90px] sm:px-2">
                                 {MONTH_NAMES[month]} {year}
                             </span>
                             <button
                                 onClick={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
-                                className="px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-xs"
+                                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-2 sm:py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-base sm:text-xs shrink-0"
                             >›</button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/60 border border-white/5">
-                            <button onClick={() => setYear(y => y - 1)} className="px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-xs">‹</button>
-                            <span className="px-3 text-xs font-semibold text-slate-200">{year}</span>
-                            <button onClick={() => setYear(y => y + 1)} className="px-2 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-xs">›</button>
+                        <div className="flex items-center p-1 rounded-xl bg-slate-900/60 border border-white/5">
+                            <button onClick={() => setYear(y => y - 1)} className="flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-2 sm:py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-base sm:text-xs shrink-0">‹</button>
+                            <span className="flex-1 text-center text-xs font-semibold text-slate-200 sm:flex-none sm:px-3">{year}</span>
+                            <button onClick={() => setYear(y => y + 1)} className="flex items-center justify-center w-9 h-9 sm:w-auto sm:h-auto sm:px-2 sm:py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-all text-base sm:text-xs shrink-0">›</button>
                         </div>
                     )}
 
-                    {/* User */}
-                    <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900/60 border border-white/5">
+                    {/* User filter - full width on mobile */}
+                    <div className="flex p-1 rounded-xl bg-slate-900/60 border border-white/5">
                         {(["all", "marcos", "camila"] as UserFilter[]).map((u) => (
                             <button
                                 key={u}
                                 onClick={() => setUserFilter(u)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                                className={`flex-1 sm:flex-none text-center px-3 py-2 sm:py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
                                     userFilter === u
                                         ? u === "marcos" ? "bg-blue-600 text-white shadow-sm"
                                           : u === "camila" ? "bg-pink-600 text-white shadow-sm"
