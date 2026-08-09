@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
-import { Transaction, Category } from "@/types";
-import { formatEur } from "@/lib/finance";
+import { Transaction, Category, User } from "@/types";
 import { FIXED_NAMES } from "@/lib/finance";
-import { theme } from "@/lib/theme";
+import TransactionsList from "@/components/TransactionsList";
 
 const MONTH_NAMES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -13,8 +12,11 @@ const DAY_NAMES = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
 type Props = {
     transactions: Transaction[];
     categories: Category[];
+    users: User[];
     initialMonth?: number;
     initialYear?: number;
+    contextUserId?: string | null;
+    onEdit?: (tx: Transaction) => void;
     onClose: () => void;
 };
 
@@ -26,7 +28,16 @@ function kindColor(kind: string, name: string): string {
     return "#64748b";
 }
 
-export default function TransactionCalendar({ transactions, categories, initialMonth, initialYear, onClose }: Props) {
+export default function TransactionCalendar({
+    transactions,
+    categories,
+    users,
+    initialMonth,
+    initialYear,
+    contextUserId,
+    onEdit,
+    onClose,
+}: Props) {
     const now = new Date();
     const [viewMonth, setViewMonth] = useState(initialMonth ?? now.getMonth());
     const [viewYear, setViewYear] = useState(initialYear ?? now.getFullYear());
@@ -85,9 +96,21 @@ export default function TransactionCalendar({ transactions, categories, initialM
         txs.forEach(tx => {
             const cat = categories.find(c => c.id === tx.categoryId);
             if (!cat) return;
-            total += cat.kind === "income" ? tx.amountCents : -tx.amountCents;
+
+            const isSharedSplit = contextUserId &&
+                tx.userId === "pareja" &&
+                cat.kind !== "saving" &&
+                cat.kind !== "investment";
+            const amount = isSharedSplit ? Math.round(tx.amountCents / 2) : tx.amountCents;
+            total += cat.kind === "income" ? amount : -amount;
         });
         return total;
+    };
+
+    const handleOpenTransaction = (tx: Transaction) => {
+        if (!onEdit) return;
+        onClose();
+        onEdit(tx);
     };
 
     return (
@@ -98,7 +121,7 @@ export default function TransactionCalendar({ transactions, categories, initialM
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-2xl bg-slate-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden"
+                className="relative max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-900 shadow-2xl"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -193,25 +216,14 @@ export default function TransactionCalendar({ transactions, categories, initialM
                             </span>
                             <span className="text-xs text-slate-500">{selectedTxs.length} movimiento{selectedTxs.length !== 1 ? "s" : ""}</span>
                         </div>
-                        <div className="divide-y divide-white/5 max-h-60 overflow-y-auto">
-                            {selectedTxs.map(tx => {
-                                const cat = categories.find(c => c.id === tx.categoryId);
-                                const color = cat ? kindColor(cat.kind, cat.label) : "#64748b";
-                                const isIncome = cat?.kind === "income";
-                                return (
-                                    <div key={tx.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                                        <span className="text-xl">{cat?.icon || "📝"}</span>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-slate-200 truncate">{cat?.label || "Desconocido"}</p>
-                                            {tx.note && <p className="text-xs text-slate-500 truncate">{tx.note}</p>}
-                                        </div>
-                                        <span className={`text-sm font-bold tabular-nums ${isIncome ? "text-emerald-400" : "text-slate-300"}`}>
-                                            {isIncome ? "+" : "-"}{formatEur(tx.amountCents)}
-                                        </span>
-                                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                                    </div>
-                                );
-                            })}
+                        <div className="max-h-72 overflow-y-auto p-1">
+                            <TransactionsList
+                                transactions={selectedTxs}
+                                categories={categories}
+                                users={users}
+                                contextUserId={contextUserId}
+                                onEdit={handleOpenTransaction}
+                            />
                         </div>
                     </div>
                 )}

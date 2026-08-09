@@ -15,6 +15,7 @@ import MonthYearSelector from "@/components/MonthYearSelector";
 import AddPaymentModal from "@/components/AddPaymentModal";
 import TransactionCalendar from "@/components/TransactionCalendar";
 import SearchInput from "@/components/SearchInput";
+import MarketPurchaseDetailsModal from "@/components/MarketPurchaseDetailsModal";
 
 export default function TransactionsPage() {
     const { transactions, categories, users } = useFinance();
@@ -29,8 +30,19 @@ export default function TransactionsPage() {
     const [kind, setKind] = useState<CategoryKind | null>(null);
     const [categoryId, setCategoryId] = useState<string | null>(null);
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+    const [editingMarketTx, setEditingMarketTx] = useState<Transaction | null>(null);
     const [showCalendar, setShowCalendar] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+
+    const contextUserId = activeTab === "general" ? null : activeTab;
+
+    const handleEditTx = (tx: Transaction) => {
+        if (tx.marketPurchaseId) {
+            setEditingMarketTx(tx);
+            return;
+        }
+        setEditingTx(tx);
+    };
 
     // Filtering logic remains identical
     let filtered = viewMode === "monthly"
@@ -70,10 +82,10 @@ export default function TransactionsPage() {
 
             {/* Tabs - Premium Segmented Control */}
             <div className="bg-slate-900/50 p-1 rounded-2xl inline-flex border border-white/5">
-                {["general", "marcos", "camila"].map((tab) => (
+                {(["general", "marcos", "camila"] as const).map((tab) => (
                     <button
                         key={tab}
-                        onClick={() => setActiveTab(tab as any)}
+                        onClick={() => setActiveTab(tab)}
                         className={`
                             px-6 py-2 rounded-xl text-sm font-semibold capitalize transition-all duration-300
                             ${activeTab === tab
@@ -170,7 +182,8 @@ export default function TransactionsPage() {
                     categories={categories}
                     users={users}
                     searchTerm={searchTerm}
-                    onEdit={setEditingTx}
+                    contextUserId={contextUserId}
+                    onEdit={handleEditTx}
                 />
             </Card>
 
@@ -180,12 +193,23 @@ export default function TransactionsPage() {
                 initialData={editingTx}
             />
 
+            {editingMarketTx && (
+                <MarketPurchaseDetailsModal
+                    isOpen={!!editingMarketTx}
+                    onClose={() => setEditingMarketTx(null)}
+                    marketPurchaseId={editingMarketTx.marketPurchaseId || null}
+                />
+            )}
+
             {showCalendar && (
                 <TransactionCalendar
-                    transactions={transactions}
+                    transactions={filtered}
                     categories={categories}
+                    users={users}
                     initialMonth={date.month}
                     initialYear={date.year}
+                    contextUserId={contextUserId}
+                    onEdit={handleEditTx}
                     onClose={() => setShowCalendar(false)}
                 />
             )}

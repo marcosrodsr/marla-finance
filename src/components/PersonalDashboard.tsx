@@ -34,6 +34,7 @@ import { Category } from "@/types";
 import SearchInput from "@/components/SearchInput";
 import MarketPurchaseDetailsModal from "@/components/MarketPurchaseDetailsModal";
 import SummaryDetailsModal from "@/components/SummaryDetailsModal";
+import AvailableCard from "@/components/AvailableCard";
 
 type PersonalDashboardProps = {
     userId: string;
@@ -110,6 +111,7 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
 
     // Monthly savings = income - fixed expenses - recurring expenses - investments
     const monthlySavings = income - fixed - recurring - invested;
+    const totalExpenses = fixed + recurring;
 
     // YTD cumulative savings — computed from all transactions up to the current selection
     const savingsJoint = useMemo(() => {
@@ -238,10 +240,19 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 />
             </div>
 
-            {/* KPIs — Fila 1: Flujo del mes (4 tarjetas) */}
+            {/* KPIs — Fila 1: Flujo del mes */}
             <div className="space-y-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Flujo del mes</p>
-                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-stretch">
+                <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 items-stretch">
+                    <AvailableCard
+                        className="col-span-2"
+                        available={monthlySavings}
+                        income={income}
+                        fixed={fixed}
+                        recurring={recurring}
+                        invested={invested}
+                    />
+
                     <StatCard
                         label="Ingresos"
                         value={formatEur(income)}
@@ -272,6 +283,18 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                             txs: filtered.filter(t => {
                                 const cat = categories.find(c => c.id === t.categoryId);
                                 return (cat?.kind === 'fixed' || cat?.kind === 'variable') && !FIXED_NAMES.includes(cat?.label ?? '');
+                            })
+                        })}
+                    />
+                    <StatCard
+                        label="Gasto total"
+                        value={formatEur(totalExpenses)}
+                        trend="down"
+                        onClick={() => setSummaryModal({
+                            title: "Detalle Gasto Total",
+                            txs: filtered.filter(t => {
+                                const cat = categories.find(c => c.id === t.categoryId);
+                                return (cat?.kind === 'fixed' || cat?.kind === 'variable');
                             })
                         })}
                     />
@@ -448,15 +471,16 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                     </div>
                 </div>
 
-                <TransactionsList
-                    transactions={movementTransactions}
-                    categories={categories}
-                    users={users}
-                    limit={10}
-                    searchTerm={searchTerm}
-                    onEdit={handleEditTx}
-                    contextUserId={userId}
-                />
+                <div className="max-h-[36rem] overflow-y-auto overscroll-contain pr-1">
+                    <TransactionsList
+                        transactions={movementTransactions}
+                        categories={categories}
+                        users={users}
+                        searchTerm={searchTerm}
+                        onEdit={handleEditTx}
+                        contextUserId={userId}
+                    />
+                </div>
             </Card>
 
             {/* Debt Payments History */}
@@ -519,8 +543,11 @@ export default function PersonalDashboard({ userId, userName }: PersonalDashboar
                 <TransactionCalendar
                     transactions={userTransactions}
                     categories={categories}
+                    users={users}
                     initialMonth={date.month}
                     initialYear={date.year}
+                    contextUserId={userId}
+                    onEdit={handleEditTx}
                     onClose={() => setShowCalendar(false)}
                 />
             )}

@@ -344,8 +344,10 @@ export default function DashboardPage() {
                 <TransactionCalendar
                     transactions={transactions}
                     categories={categories}
+                    users={users}
                     initialMonth={date.month}
                     initialYear={date.year}
+                    onEdit={handleEditTx}
                     onClose={() => setShowCalendar(false)}
                 />
             )}

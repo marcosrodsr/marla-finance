@@ -13,7 +13,7 @@ export default function StatCard({ label, value, subtitle, trend, icon, onClick 
     return (
         <Card
             onClick={onClick}
-            className="flex flex-col items-center justify-center text-center h-full group hover:border-blue-500/20 transition-colors bg-gradient-to-b from-white/[0.03] to-transparent"
+            className="flex h-full flex-col items-center justify-center bg-gradient-to-b from-white/[0.03] to-transparent text-center transition-colors group hover:border-blue-500/20 !p-4 sm:!p-5"
         >
             <div className="flex flex-col items-center gap-2 mb-4 w-full">
                 <div className="flex items-center justify-center gap-2 w-full">
@@ -22,8 +22,8 @@ export default function StatCard({ label, value, subtitle, trend, icon, onClick 
                 </div>
             </div>
 
-            <div className="flex flex-col items-center w-full overflow-hidden">
-                <div className="text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight whitespace-nowrap">
+            <div className="flex w-full flex-col items-center [container-type:inline-size]">
+                <div className="max-w-full whitespace-nowrap text-[clamp(0.875rem,15cqw,1.5rem)] font-black leading-none tracking-tight text-white tabular-nums">
                     {value}
                 </div>
 

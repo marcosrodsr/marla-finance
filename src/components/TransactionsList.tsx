@@ -68,7 +68,7 @@ export default function TransactionsList({
 
     return (
         <div className="space-y-1">
-            {displayed.map((tx, index) => {
+            {displayed.map((tx) => {
                 const category = categories.find((c) => c.id === tx.categoryId) || {
                     id: "unknown",
                     label: "Desconocido",
@@ -118,7 +118,7 @@ export default function TransactionsList({
                                             50%
                                         </span>
                                     )}
-                                    {user && !contextUserId && (
+                                    {user && (!contextUserId || tx.userId === "pareja") && (
                                         <span className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-full border shrink-0 ${user.id === 'marcos'
                                             ? 'border-blue-500/30 text-blue-400'
                                             : user.id === 'camila' ? 'border-pink-500/30 text-pink-400' : 'border-slate-500/30 text-slate-400'
